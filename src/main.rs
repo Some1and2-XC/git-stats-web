@@ -5,6 +5,8 @@ use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
 
+use anyhow::{Context, Result};
+
 use std::collections::hash_map::HashMap;
 
 use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
@@ -139,7 +141,7 @@ impl PredictionStructure {
     }
 }
 
-fn fetch_repo(ssh_url: &str, ssh_key_path: &str, tmp_dir: &Path) -> Repository {
+fn fetch_repo(ssh_url: &str, ssh_key_path: &str, tmp_dir: &Path) -> Result<Repository> {
 
     // Gets the home directory
     let home_env = match env::var("HOME") {
@@ -172,10 +174,10 @@ fn fetch_repo(ssh_url: &str, ssh_key_path: &str, tmp_dir: &Path) -> Repository {
     debug!("Finished preparing builder");
 
     // Clones the repo
-    return match tmp_dir.is_dir() {
-        true => Repository::open(tmp_dir).unwrap(),
-        false => builder.clone(ssh_url, tmp_dir).unwrap(),
-    };
+    return Ok(match tmp_dir.is_dir() {
+        true => Repository::open(tmp_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?,
+        false => builder.clone(ssh_url, tmp_dir).with_context(|| "Can't clone repo (do you have the right URL?)")?,
+    });
 }
 
 /// Gets the head commit from a repo
@@ -350,7 +352,7 @@ async fn main() -> std::io::Result<()> {
                     &url,
                     &unlocked_args.ssh_key,
                     Path::new(&unlocked_args.tmp.to_string()).join(file_path).as_path(),
-                    );
+                    ).unwrap();
                 info!("Repo Cloned to `{file_path}`!");
                 repo
             },
