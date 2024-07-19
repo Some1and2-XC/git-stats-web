@@ -1,9 +1,12 @@
 use cli::CliArgs;
 use git2::{Commit, Cred, DiffOptions, RemoteCallbacks, Repository};
+use regex::Regex;
 use std::{env, path::Path, sync::{Arc, Mutex}};
 use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
+
+use url::Url;
 
 use anyhow::{Context, Result};
 
@@ -176,7 +179,7 @@ fn fetch_repo(ssh_url: &str, ssh_key_path: &str, tmp_dir: &Path) -> Result<Repos
     // Clones the repo
     return Ok(match tmp_dir.is_dir() {
         true => Repository::open(tmp_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?,
-        false => builder.clone(ssh_url, tmp_dir).with_context(|| "Can't clone repo (do you have the right URL?)")?,
+        false => builder.clone(ssh_url, tmp_dir).with_context(|| format!("Can't clone repo to `{tmp_dir:?}` (do you have the right URL?)"))?,
     });
 }
 
@@ -194,6 +197,22 @@ fn get_head_commit(repo: &Repository) -> Commit {
         .unwrap();
 
     return head_object;
+}
+
+/// Gets the path of a url from URI
+/// May modify the url to work with git@xyz:your/project domains
+/// Rewrites them to https://xyz/your/project
+fn get_path(src_url: &str) -> Url {
+    let mut tmp_url = src_url.to_string();
+
+    let re = Regex::new(r"git@(?<domain>.+):(?<path>.+)").unwrap();
+
+    if let Some(caps) = re.captures(&tmp_url) {
+        tmp_url = format!("https://{}/{}", &caps["domain"], &caps["path"]);
+    }
+
+    debug!("Parsing URL: {tmp_url}");
+    Url::parse(&tmp_url).unwrap()
 }
 
 async fn not_found(_req: HttpRequest) -> HttpResponse {
@@ -324,12 +343,36 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
     Json(calendar_items)
 }
 
+/// Gets the name of the repository with link
+async fn repo_name(args: Data<Arc<Mutex<CliArgs>>>) -> String {
+    let url = &args.lock().unwrap().url;
+    get_path(url)
+        .path() // Gets the path
+        .trim_start_matches("/") // Removes the starting / (if applicable)
+        .splitn(2, ".") // Gets the part before the .
+        .nth(0)
+        .unwrap()
+        .to_string()
+}
+
+/// Gets the URL of the repository
+async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
+    let url = get_path(&args.lock().unwrap().url);
+    return url.to_string();
+}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
 
     // Gets CLI arguments
-    let args = Arc::new(Mutex::new(cli::CliArgs::parse()));
+    let args = Arc::new(Mutex::new({
+        let mut args = cli::CliArgs::parse();
+        let terminator = ".git";
+        if args.url.ends_with(terminator) {
+            args.url = args.url[0..args.url.len() - terminator.len()].to_string();
+        }
+        args
+    }));
 
     let unlocked_args = args.lock().unwrap();
 
@@ -341,26 +384,31 @@ async fn main() -> std::io::Result<()> {
     let env = env_logger::Env::new().filter(LOG_ENV_VAR);
     env_logger::init_from_env(env);
 
-    // "git@github.com:some1and2-xc/git-stats/",
+    let src_url = &unlocked_args.url;
+
+    let url = get_path(src_url);
 
     // Fetches repo
     let repo = Arc::new(Mutex::new(
-        match &unlocked_args.url {
-            Some(url) => {
-                let file_path = url.splitn(2, ":").last().unwrap();
+        match url.scheme() {
+            "http" | "https" | "ssh" => {
+                let file_path = ".".to_string() + url.path();
                 let repo = fetch_repo(
-                    &url,
+                    src_url,
                     &unlocked_args.ssh_key,
-                    Path::new(&unlocked_args.tmp.to_string()).join(file_path).as_path(),
+                    Path::new(&unlocked_args.tmp.to_string()).join(&file_path).as_path(),
                     ).unwrap();
                 info!("Repo Cloned to `{file_path}`!");
                 repo
             },
-            None => {
+            "file" => {
                 let directory = &unlocked_args.directory;
                 info!("Found repo in directory: `{directory}`!");
                 Repository::init(directory).unwrap()
             },
+            _ => {
+                panic!("Unknown Format!");
+            }
         }
     ));
 
@@ -389,7 +437,9 @@ async fn main() -> std::io::Result<()> {
                 .cookie_secure(false)
                 .build(),
             )
-            .service(web::resource(&args.lock().unwrap().server_uri).to(get_data))
+            .service(web::resource("/api/data").to(get_data))
+            .service(web::resource("/api/repo-name").to(repo_name))
+            .service(web::resource("/api/repo-url").to(repo_url))
             .service(Files::new("/", "static")
                 .index_file("index.html")
                 // .show_files_listing() // Tree shows static files

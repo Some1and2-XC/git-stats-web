@@ -24,6 +24,20 @@ function updateCalendar() {
             });
             calendar.render();
         });
+
+    fetch("/api/repo-name")
+        .then(res => res.text())
+        .then(repo_title => {
+            console.log(repo_title);
+            document.getElementById("title").innerText = repo_title;
+        });
+
+    fetch("/api/repo-url")
+        .then(res => res.text())
+        .then(repo_url => {
+            console.log(repo_url);
+            document.getElementById("title").setAttribute("href", repo_url);
+        });
 }
 
 updateCalendar();

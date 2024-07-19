@@ -32,8 +32,8 @@ pub struct CliArgs {
     pub directory: String,
 
     /// The URL of the repo, if this is set, the repo will be fetched.
-    #[clap(short, long, default_value=None)]
-    pub url: Option<String>,
+    #[clap(short, long, default_value="file:")]
+    pub url: String,
 
     /// The path to the temp directory for the repos
     #[clap(long, default_value="./tmp")]
@@ -62,10 +62,6 @@ pub struct CliArgs {
     /// The port to run the server on.
     #[clap(short='P', long, default_value="3000")]
     pub server_port: u16,
-
-    /// Sets the URI the server serves repo stats on.
-    #[clap(short='U', long, default_value="/api/data")]
-    pub server_uri: String,
 
     /// Sets the verbosity of logs
     #[arg(long,
