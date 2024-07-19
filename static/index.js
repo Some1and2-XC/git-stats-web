@@ -42,4 +42,6 @@ function updateCalendar() {
         });
 }
 
-updateCalendar();
+document.addEventListener("DOMContentLoaded", () => {
+    updateCalendar();
+});
