@@ -134,7 +134,6 @@ impl PredictionStructure {
         }
 
         let response = results.iter().sum::<Timestamp>() / results.len() as Timestamp;
-        debug!("Response: {} & Values: {:?}", response, results);
         return response;
 
     }
