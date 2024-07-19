@@ -345,9 +345,13 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
 
 /// Gets the name of the repository with link
 async fn repo_name(args: Data<Arc<Mutex<CliArgs>>>) -> String {
-    let url = &args.lock().unwrap().url;
-    get_path(url)
-        .path() // Gets the path
+    let url = get_path(&args.lock().unwrap().url);
+
+    if url.scheme() == "file" {
+        return "LOCAL REPO".to_string();
+    }
+
+    url.path() // Gets the path
         .trim_start_matches("/") // Removes the starting / (if applicable)
         .splitn(2, ".") // Gets the part before the .
         .nth(0)
@@ -358,6 +362,11 @@ async fn repo_name(args: Data<Arc<Mutex<CliArgs>>>) -> String {
 /// Gets the URL of the repository
 async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
     let url = get_path(&args.lock().unwrap().url);
+
+    if !url.has_host() {
+        return "".to_string();
+    }
+
     return url.to_string();
 }
 
@@ -402,7 +411,7 @@ async fn main() -> std::io::Result<()> {
                 repo
             },
             "file" => {
-                let directory = &unlocked_args.directory;
+                let directory = ".".to_string() + url.path();
                 info!("Found repo in directory: `{directory}`!");
                 Repository::init(directory).unwrap()
             },

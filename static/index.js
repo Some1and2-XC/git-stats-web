@@ -2,7 +2,7 @@ function updateCalendar() {
     fetch("/api/data")
         .then(res => res.json())
         .then(events => {
-            console.log(events);
+            // console.log(events);
 
             let dates = ["start", "end"];
 
@@ -28,15 +28,17 @@ function updateCalendar() {
     fetch("/api/repo-name")
         .then(res => res.text())
         .then(repo_title => {
-            console.log(repo_title);
+            console.log("Repo Title: " + repo_title);
             document.getElementById("title").innerText = repo_title;
         });
 
     fetch("/api/repo-url")
         .then(res => res.text())
         .then(repo_url => {
-            console.log(repo_url);
-            document.getElementById("title").setAttribute("href", repo_url);
+            console.log("Repo URL: " + repo_url);
+            if (repo_url) {
+                document.getElementById("title").setAttribute("href", repo_url);
+            }
         });
 }
 

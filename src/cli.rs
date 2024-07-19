@@ -27,10 +27,6 @@ macro_rules! clap_enum_variants {
 #[command(version, about, long_about = None)]
 pub struct CliArgs {
 
-    /// The path to the repo
-    #[clap(short, long, default_value=".")]
-    pub directory: String,
-
     /// The URL of the repo, if this is set, the repo will be fetched.
     #[clap(short, long, default_value="file:")]
     pub url: String,
