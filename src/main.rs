@@ -1,35 +1,31 @@
 use cli::CliArgs;
-use git2::{Commit, Cred, DiffOptions, RemoteCallbacks, Repository};
-use regex::Regex;
-use std::{env, path::Path, sync::{Arc, Mutex}};
+use git2::{DiffOptions, Repository};
+use std::{path::Path, sync::{Arc, Mutex}};
 use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
-
-use url::Url;
-
-use anyhow::{Context, Result};
-
-use std::collections::hash_map::HashMap;
 
 use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 
 mod cli;
+mod prediction;
+mod git;
+mod utils;
 
 static SESSION_SIGNING_KEY: &[u8] = &[0; 64];
 static LOG_ENV_VAR: &str = "RUST_LOG";
 
 use i64 as Timestamp;
 
-#[derive(Serialize, Deserialize, Debug)]
-struct CalendarValueArr (Vec<CalendarValue>);
-
-impl CalendarValueArr {
-    fn new() -> Self {
-        Self(vec!())
-    }
+async fn not_found(_req: HttpRequest) -> HttpResponse {
+    let response = "<h1>404 Not FOUND!</h1>".to_string() +
+        "<hr />" +
+        "<p>Golly gee, the page you're looking for can't be found! Maybe try a different page or go back to the <a href='/'>homepage</a>?</p>";
+    return HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(response);
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -41,214 +37,20 @@ struct CalendarValue {
     pub projected: bool,
 }
 
-#[derive(Debug, Default, Clone)]
-struct PredictionAttributes {
-    sum: (i32, Timestamp),
-    count: i32,
-    min: (i32, Timestamp),
-    max: (i32, Timestamp),
-}
-
-impl PredictionAttributes {
-    /// Makes Prediction based on its own values
-    fn predict(&self, value: i32) -> Timestamp {
-
-        let projection = value as Timestamp * (self.sum.1 / self.sum.0 as Timestamp);
-
-        if projection < self.min.1 { return self.min.1; }
-        if projection > self.max.1 { return self.max.1; }
-
-        return projection;
-    }
-}
-
-#[derive(Debug)]
-struct PredictionStructure {
-    history_map: HashMap<String, PredictionAttributes>,
-    keys: Vec<String>,
-}
-
-impl PredictionStructure {
-    fn new() -> Self {
-        Self {
-            history_map: HashMap::new(),
-            keys: vec![
-                "files_changed".to_string(),
-                "lines_added".to_string(),
-                "lines_removed".to_string()
-            ],
-        }
-    }
-
-    /// Function for adding another item to the PredictionStructure
-    /// `key` refers to the key of the dictionary as well as what to insert
-    /// an example would be "lines_added" or "files_changed"
-    /// the value is the value of the attribute
-    /// Returns `true` if a new value was added
-    /// Returns `false` if a value was modified
-    fn insert_item(&mut self, key: String, value: i32, time: Timestamp) -> bool {
-
-        assert!(self.keys.contains(&key));
-
-        let mut attributes = match self.history_map.get_mut(&key) {
-            Some(v) => v.clone(),
-            None => PredictionAttributes::default(),
-        };
-
-        // Updates sum and count
-        attributes.count += 1;
-        attributes.sum.0 += value;
-        attributes.sum.1 += time;
-
-        // Updates Min
-        if value < attributes.min.0 {
-            attributes.min.0 = value;
-            attributes.min.1 = time;
-        }
-
-        // Updates Max
-        if value > attributes.max.0 {
-            attributes.max.0 = value;
-            attributes.max.1 = time;
-        }
-
-        return match self.history_map.insert(key, attributes) {
-            Some(_) => true,
-            None => false,
-        };
-    }
-
-    /// Makes a prediction based on all the previous values it found
-    fn predict(&self, files_changed: i32, lines_added: i32, lines_removed: i32) -> Timestamp {
-
-        let mut results = vec![];
-
-        let keys_and_values = [
-            ("files_changed".to_string(), files_changed),
-            ("lines_added".to_string(), lines_added),
-            ("lines_removed".to_string(), lines_removed),
-        ];
-
-        for (k, v) in keys_and_values {
-            let pred_value = match self.history_map.get(&k) {
-                Some(v) => v,
-                None => continue,
-            };
-
-            results.push(pred_value.predict(v));
-        }
-
-        let response = results.iter().sum::<Timestamp>() / results.len() as Timestamp;
-        return response;
-
-    }
-}
-
-fn fetch_repo(ssh_url: &str, ssh_key_path: &str, tmp_dir: &Path) -> Result<Repository> {
-
-    // Gets the home directory
-    let home_env = match env::var("HOME") {
-        Ok(v) => v,
-        Err(_) => {
-            panic!("Can't find environment variable `$HOME` for ssh!");
-            // return Err(git2::Error::new(ErrorCode::Directory, ErrorClass::Os, "Can't find environment variable `$HOME` for ssh!".to_string()))
-        },
-    };
-
-    // Sets Credential callback
-    let mut callbacks = RemoteCallbacks::new();
-    callbacks.credentials(|_url, username_from_url, _allowed_types| {
-        Cred::ssh_key(username_from_url.unwrap(),
-            None,
-            Path::new(&home_env).join(ssh_key_path).as_path(),
-            None,
-        )
-    });
-    debug!("Generated Credentials");
-
-    // Prepares fetch options
-    let mut fo = git2::FetchOptions::new();
-    fo.remote_callbacks(callbacks);
-    debug!("Prepared fetch options");
-
-    // Prepare builder.
-    let mut builder = git2::build::RepoBuilder::new();
-    builder.fetch_options(fo);
-    debug!("Finished preparing builder");
-
-    // Clones the repo
-    return Ok(match tmp_dir.is_dir() {
-        true => Repository::open(tmp_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?,
-        false => builder.clone(ssh_url, tmp_dir).with_context(|| format!("Can't clone repo to `{tmp_dir:?}` (do you have the right URL?)"))?,
-    });
-}
-
-/// Gets the head commit from a repo
-fn get_head_commit(repo: &Repository) -> Commit {
-
-    let head_oid = repo
-        .head()
-        .unwrap()
-        .target()
-        .unwrap();
-
-    let head_object = repo
-        .find_commit(head_oid)
-        .unwrap();
-
-    return head_object;
-}
-
-/// Gets the path of a url from URI
-/// May modify the url to work with git@xyz:your/project domains
-/// Rewrites them to https://xyz/your/project
-fn get_path(src_url: &str) -> Url {
-    let mut tmp_url = src_url.to_string();
-
-    let re = Regex::new(r"git@(?<domain>.+):(?<path>.+)").unwrap();
-
-    if let Some(caps) = re.captures(&tmp_url) {
-        tmp_url = format!("https://{}/{}", &caps["domain"], &caps["path"]);
-    }
-
-    debug!("Parsing URL: {tmp_url}");
-    Url::parse(&tmp_url).unwrap()
-}
-
-async fn not_found(_req: HttpRequest) -> HttpResponse {
-    let response = "<h1>404 Not FOUND!</h1>".to_string() +
-        "<hr />" +
-        "<p>Golly gee, the page you're looking for can't be found! Maybe try a different page or go back to the <a href='/'>homepage</a>?</p>";
-    return HttpResponse::Ok()
-        .content_type(ContentType::html())
-        .body(response);
-}
-
-#[derive(Clone)]
-struct CommitData {
-    message: String,
-    timestamp: Timestamp,
-    prev_timestamp: Timestamp,
-    delta_t: Timestamp,
-    files_changed: i32,
-    lines_added: i32,
-    lines_removed: i32,
-    projected: bool,
-}
-
-async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data<Arc<Mutex<Repository>>>) -> Json<CalendarValueArr> {
+/// Function for getting commit data and returning json
+async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data<Arc<Mutex<Repository>>>) -> Json<Vec<CalendarValue>> {
 
     let unlocked_repo = repo.lock().unwrap();
-    let mut commit_arr: Vec<CommitData> = Vec::new();
+    let mut commit_arr: Vec<git::CommitData> = Vec::new();
 
-    let mut head = get_head_commit(&unlocked_repo);
+    let mut head = git::get_head_commit(&unlocked_repo);
 
     let session_time = {
         let unlocked_args = args.lock().unwrap();
         unlocked_args.time_allowed
     };
 
-    let mut prediction = PredictionStructure::new();
+    let mut prediction = prediction::PredictionStructure::new();
 
     // Adds data the commit_arr
     // let max_commit_depth = 25;
@@ -277,7 +79,7 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
         let prev_timestamp = parent.time().seconds();
         let delta_t = timestamp - prev_timestamp;
 
-        let commit_data = CommitData {
+        let commit_data = git::CommitData {
             message: head.message().unwrap_or("MESSAGE_NOT_FOUND").trim().to_string(),
             timestamp,
             prev_timestamp,
@@ -301,7 +103,7 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
 
     let output_arr = commit_arr
         .split_inclusive(|v| session_time <= v.delta_t)
-        .collect::<Vec<&[CommitData]>>()
+        .collect::<Vec<&[git::CommitData]>>()
         .iter_mut()
         .map(|v| {
             let mut items = v.to_vec();
@@ -320,15 +122,16 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
 
             items
         })
-        .collect::<Vec<Vec<CommitData>>>()
+        .collect::<Vec<Vec<git::CommitData>>>()
         ;
 
-    let mut calendar_items = CalendarValueArr::new();
+    // let mut calendar_items = CalendarValueArr::new();
+    let mut calendar_items = Vec::new();
 
     // Converts the list of list of `CommitData`s into a single array of `CalendarValues`s
     for item_lst in output_arr {
         for value in item_lst {
-            calendar_items.0.push(
+            calendar_items.push(
                 CalendarValue {
                     title: value.message.clone(),
                     delta_t: value.delta_t,
@@ -345,7 +148,7 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
 
 /// Gets the name of the repository with link
 async fn repo_name(args: Data<Arc<Mutex<CliArgs>>>) -> String {
-    let url = get_path(&args.lock().unwrap().url);
+    let url = utils::get_path(&args.lock().unwrap().url);
 
     if url.scheme() == "file" {
         return "LOCAL REPO".to_string();
@@ -361,7 +164,7 @@ async fn repo_name(args: Data<Arc<Mutex<CliArgs>>>) -> String {
 
 /// Gets the URL of the repository
 async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
-    let url = get_path(&args.lock().unwrap().url);
+    let url = utils::get_path(&args.lock().unwrap().url);
 
     if !url.has_host() {
         return "".to_string();
@@ -386,7 +189,7 @@ async fn main() -> std::io::Result<()> {
     let unlocked_args = args.lock().unwrap();
 
     // Initializes the logger
-    if let Some(level) = unlocked_args.logs.to_level() {
+    if let Some(level) = unlocked_args.log.to_level() {
         std::env::set_var(LOG_ENV_VAR, level.to_string());
     }
 
@@ -395,14 +198,14 @@ async fn main() -> std::io::Result<()> {
 
     let src_url = &unlocked_args.url;
 
-    let url = get_path(src_url);
+    let url = utils::get_path(src_url);
 
     // Fetches repo
     let repo = Arc::new(Mutex::new(
         match url.scheme() {
             "http" | "https" | "ssh" => {
                 let file_path = ".".to_string() + url.path();
-                let repo = fetch_repo(
+                let repo = git::fetch_repo(
                     src_url,
                     &unlocked_args.ssh_key,
                     Path::new(&unlocked_args.tmp.to_string()).join(&file_path).as_path(),

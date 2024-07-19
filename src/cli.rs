@@ -64,5 +64,5 @@ pub struct CliArgs {
           default_value_t=LevelFilter::Off,
           value_name="LevelFilter",
           value_parser=clap_enum_variants!(LevelFilter))]
-    pub logs: LevelFilter,
+    pub log: LevelFilter,
 }
