@@ -296,7 +296,6 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
             // Updates item with projections
             item.delta_t = prediction;
             item.prev_timestamp = item.timestamp - prediction;
-            item.message += "  # This one was changed!";
             item.projected = true;
 
             items
