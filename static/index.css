@@ -8,9 +8,19 @@
     color: black;
 }
 
+.fc-list {
+    height: fit-content !important;
+    position: unset !important;
+}
+
 @media print {
     :root {
         --fc-border-color: transparent;
+    }
+
+    /* Fixes list taking too much space */
+    .fc-view-harness {
+        height: fit-content !important;
     }
 
     .fc-scroller {
@@ -19,5 +29,10 @@
 
     .fc-button-group,.fc-button {
         display: none !important;
+    }
+
+    .bottom-message {
+        bottom: 0%;
+        position: fixed;
     }
 }
