@@ -61,7 +61,7 @@ pub struct CliArgs {
 
     /// Sets the verbosity of logs
     #[arg(long,
-          default_value_t=LevelFilter::Off,
+          default_value_t=LevelFilter::Info,
           value_name="LevelFilter",
           value_parser=clap_enum_variants!(LevelFilter))]
     pub log: LevelFilter,
