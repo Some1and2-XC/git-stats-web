@@ -1,0 +1,5 @@
+@media print {
+    svg {
+        fill: black !important;
+    }
+}

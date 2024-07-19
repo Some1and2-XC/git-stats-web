@@ -2,15 +2,29 @@
 <html lang="en">
     <head>
         <title>Git Stats</title>
+
         <meta charset="utf-8" />
+
+        <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+        <link rel="stylesheet" type="text/css" href="./index.css" />
+
         <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.13/index.global.min.js"></script>
         <script src="./index.js"></script>
-        <link rel="stylesheet" type="text/css" href="./index.css" />
     </head>
 
     <body>
-        <code>Git History viewer by @some1and2-xc</code>
-        <h1><a id="title" target="_blank">Loading...</a></h1>
+        <div style="
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            width: 100%;
+            ">
+            <object type="image/svg+xml" data="./icon.svg" style="height: 5rem; padding-right: 1rem;"></object>
+            <div>
+                <h1><a id="title" target="_blank">Loading...</a></h1>
+                <code>Git History viewer by @some1and2-xc</code>
+            </div>
+        </div>
         <hr />
         <div id="calendar"></div>
     </body>

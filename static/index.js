@@ -12,8 +12,11 @@ function updateCalendar() {
                 }
             }
 
+            let init_date = events[events.length - 1]["end"]; // initializes to the newest date in the data
+
             var calendarEl = document.getElementById("calendar");
             var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialDate: init_date,
                 initialView: "dayGridMonth",
                 headerToolbar: {
                     "left": "prev,next today",
