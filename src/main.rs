@@ -133,7 +133,9 @@ impl PredictionStructure {
             results.push(pred_value.predict(v));
         }
 
-        return results.iter().sum::<Timestamp>() / results.len() as Timestamp;
+        let response = results.iter().sum::<Timestamp>() / results.len() as Timestamp;
+        debug!("Response: {} & Values: {:?}", response, results);
+        return response;
 
     }
 }
@@ -216,8 +218,6 @@ struct CommitData {
 
 async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data<Arc<Mutex<Repository>>>) -> Json<CalendarValueArr> {
 
-    debug!("Running thing!");
-
     let unlocked_repo = repo.lock().unwrap();
     let mut commit_arr: Vec<CommitData> = Vec::new();
 
@@ -280,7 +280,7 @@ async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data
     }
 
     let output_arr = commit_arr
-        .split_inclusive(|v| session_time >= (v.timestamp - v.prev_timestamp))
+        .split_inclusive(|v| session_time <= v.delta_t)
         .collect::<Vec<&[CommitData]>>()
         .iter_mut()
         .map(|v| {
