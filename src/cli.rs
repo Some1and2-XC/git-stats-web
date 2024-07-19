@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use clap::{
     Parser,
     command,
@@ -25,7 +23,7 @@ macro_rules! clap_enum_variants {
 
 
 /// A utility for parsing through git repos
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
 pub struct CliArgs {
 
@@ -38,7 +36,7 @@ pub struct CliArgs {
     pub url: Option<String>,
 
     /// The path to the temp directory for the repos
-    #[clap(short, long, default_value="./tmp")]
+    #[clap(long, default_value="./tmp")]
     pub tmp: String,
 
     /// The file to write the output to
@@ -48,6 +46,10 @@ pub struct CliArgs {
     /// The location of an ssh key for auth from the home directory.
     #[clap(short, long, default_value=".ssh/id_ed25519")]
     pub ssh_key: String,
+
+    /// The amount of time in seconds that is allowed between commits
+    #[clap(short, long, default_value="18000")]
+    pub time_allowed: i64,
 
     /// Flag refering to if the server should start.
     #[clap(short='S', long, action)]
