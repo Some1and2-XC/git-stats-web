@@ -18,7 +18,8 @@ pub struct CommitData {
     pub projected: bool,
 }
 
-pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, tmp_dir: &Path) -> Result<Repository> {
+/// Function for cloning a repo
+pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<Repository> {
 
     // Gets the home directory
     let home_env = match env::var("HOME") {
@@ -51,9 +52,9 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, tmp_dir: &Path) -> Result<R
     debug!("Finished preparing builder");
 
     // Clones the repo
-    return Ok(match tmp_dir.is_dir() {
-        true => Repository::open(tmp_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?,
-        false => builder.clone(ssh_url, tmp_dir).with_context(|| format!("Can't clone repo to `{tmp_dir:?}` (do you have the right URL?)"))?,
+    return Ok(match out_dir.is_dir() {
+        true => Repository::open(out_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?,
+        false => builder.clone(ssh_url, out_dir).with_context(|| format!("Can't clone repo to `{out_dir:?}` (do you have the right URL?)"))?,
     });
 }
 

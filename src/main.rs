@@ -1,11 +1,12 @@
 use cli::CliArgs;
+use git::fetch_repo;
 use git2::{DiffOptions, Repository};
-use std::{path::Path, sync::{Arc, Mutex}};
+use std::{fmt::Display, path::Path, sync::{Arc, Mutex}};
 use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
 
-use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, ResponseError};
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 
@@ -13,6 +14,7 @@ mod cli;
 mod prediction;
 mod git;
 mod utils;
+mod db;
 
 static SESSION_SIGNING_KEY: &[u8] = &[0; 64];
 static LOG_ENV_VAR: &str = "RUST_LOG";
@@ -41,109 +43,9 @@ struct CalendarValue {
 async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data<Arc<Mutex<Repository>>>) -> Json<Vec<CalendarValue>> {
 
     let unlocked_repo = repo.lock().unwrap();
-    let mut commit_arr: Vec<git::CommitData> = Vec::new();
+    let unlocked_args = args.lock().unwrap();
 
-    let mut head = git::get_head_commit(&unlocked_repo);
-
-    let session_time = {
-        let unlocked_args = args.lock().unwrap();
-        unlocked_args.time_allowed
-    };
-
-    let mut prediction = prediction::PredictionStructure::new();
-
-    // Adds data the commit_arr
-    // let max_commit_depth = 25;
-    // for _i in 0..max_commit_depth {
-    loop {
-
-        let mut diff_opts = DiffOptions::new();
-
-        let Ok(parent) = head.parent(0) else {
-            break;
-        };
-
-        let diff = unlocked_repo.diff_tree_to_tree(
-            Some(&parent.tree().unwrap()),
-            Some(&head.tree().unwrap()),
-            Some(
-                diff_opts
-                    .force_text(true)
-                )
-            )
-            .unwrap()
-            .stats()
-            .unwrap();
-
-        let timestamp = head.time().seconds();
-        let prev_timestamp = parent.time().seconds();
-        let delta_t = timestamp - prev_timestamp;
-
-        let commit_data = git::CommitData {
-            message: head.message().unwrap_or("MESSAGE_NOT_FOUND").trim().to_string(),
-            timestamp,
-            prev_timestamp,
-            delta_t,
-            files_changed: diff.files_changed() as i32,
-            lines_added: diff.insertions() as i32,
-            lines_removed: diff.deletions() as i32,
-            projected: false,
-        };
-
-        commit_arr.push(commit_data);
-
-        if delta_t < session_time {
-            prediction.insert_item("files_changed".to_string(), diff.files_changed() as i32, delta_t);
-            prediction.insert_item("lines_added".to_string(), diff.insertions() as i32, delta_t);
-            prediction.insert_item("lines_removed".to_string(), diff.deletions() as i32, delta_t);
-        }
-
-        head = parent;
-    }
-
-    let output_arr = commit_arr
-        .split_inclusive(|v| session_time <= v.delta_t)
-        .collect::<Vec<&[git::CommitData]>>()
-        .iter_mut()
-        .map(|v| {
-            let mut items = v.to_vec();
-            let item = items.last_mut().unwrap();
-
-            // Makes prediction for last item
-            let prediction = prediction.predict(
-                item.files_changed,
-                item.lines_added,
-                item.lines_removed);
-
-            // Updates item with projections
-            item.delta_t = prediction;
-            item.prev_timestamp = item.timestamp - prediction;
-            item.projected = true;
-
-            items
-        })
-        .collect::<Vec<Vec<git::CommitData>>>()
-        ;
-
-    // let mut calendar_items = CalendarValueArr::new();
-    let mut calendar_items = Vec::new();
-
-    // Converts the list of list of `CommitData`s into a single array of `CalendarValues`s
-    for item_lst in output_arr {
-        for value in item_lst {
-            calendar_items.push(
-                CalendarValue {
-                    title: value.message.clone(),
-                    delta_t: value.delta_t,
-                    start: value.prev_timestamp + 1, // Adding one so the timestamp don't overlap
-                    end: value.timestamp,
-                    projected: value.projected,
-                }
-            );
-        }
-    }
-
-    Json(calendar_items)
+    return Json(utils::calculate_data(&unlocked_args, &unlocked_repo));
 }
 
 /// Gets the name of the repository with link
@@ -173,6 +75,78 @@ async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
     return url.to_string();
 }
 
+#[derive(Serialize)]
+struct ResponseInformation {
+    site: String,
+    username: String,
+    repo: String,
+}
+
+#[derive(Debug)]
+struct CantFindRepoError {
+    pub message: String,
+}
+
+impl CantFindRepoError {
+    fn new(message: String) -> Self {
+        return Self {
+            message,
+        };
+    }
+
+    fn to_string(&self) -> &str {
+        return &self.message;
+    }
+}
+
+impl ResponseError for CantFindRepoError {
+    fn status_code(&self) -> actix_web::http::StatusCode {
+        return actix_web::http::StatusCode::from_u16(500).unwrap();
+    }
+
+    fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
+        return HttpResponse::Ok().body("It seems as though a repo can't be constructed.");
+    }
+}
+
+impl Display for CantFindRepoError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return write!(f, "{}", self.message);
+    }
+}
+
+
+#[actix_web::get("/repo/{site}/{username}/{repo}")]
+async fn get_project(path: web::Path<(String, String, String)>, args: Data<Arc<Mutex<CliArgs>>>) -> Result<Json<Vec<CalendarValue>>, CantFindRepoError> {
+    let unlocked_args = args.lock().unwrap();
+
+    let (site, username, repo) = path.into_inner();
+    let file_path = Path::new(&unlocked_args.tmp)
+        .join(&site)
+        .join(&username)
+        .join(&repo)
+        ;
+
+    // If the directory isn't found
+    //
+    let repo = match file_path.join(".git").is_dir() {
+        false => {
+            info!("Cloning repo: {repo}");
+            match fetch_repo(
+                &format!("https://{site}/{username}/{repo}"),
+                &unlocked_args.ssh_key,
+                file_path.as_path()
+                ) {
+                    Ok(v) => v,
+                    Err(e) => return Err(CantFindRepoError::new(e.to_string())),
+            }
+        },
+        true => Repository::open(file_path).unwrap(),
+    };
+
+    return Ok(Json(utils::calculate_data(&unlocked_args, &repo)));
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
 
@@ -181,7 +155,9 @@ async fn main() -> std::io::Result<()> {
         let mut args = cli::CliArgs::parse();
         let terminator = ".git";
         if args.url.ends_with(terminator) {
-            args.url = args.url[0..args.url.len() - terminator.len()].to_string();
+            args.url = args.url[0..args.url.len() - terminator.len()]
+                .to_lowercase()
+                .to_string();
         }
         args
     }));
@@ -204,7 +180,7 @@ async fn main() -> std::io::Result<()> {
     let repo = Arc::new(Mutex::new(
         match url.scheme() {
             "http" | "https" | "ssh" => {
-                let file_path = ".".to_string() + url.path();
+                let file_path = format!("{}{}", url.authority(), url.path()).to_lowercase();
                 let repo = git::fetch_repo(
                     src_url,
                     &unlocked_args.ssh_key,
@@ -252,11 +228,14 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/api/data").to(get_data))
             .service(web::resource("/api/repo-name").to(repo_name))
             .service(web::resource("/api/repo-url").to(repo_url))
+            .service(get_project)
+
             .service(Files::new("/", "static")
                 .index_file("index.html")
                 // .show_files_listing() // Tree shows static files
                 // .prefer_utf8(true)
                 )
+
             .default_service(web::to(not_found))
     })
         .bind((ip, port))?
