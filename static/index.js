@@ -1,5 +1,6 @@
-function updateCalendar() {
-    fetch("/api/data")
+function updateCalendar(url) {
+
+    fetch(url)
         .then(res => res.json())
         .then(events => {
             // console.log(events);
@@ -31,23 +32,4 @@ function updateCalendar() {
             calendar.render();
         });
 
-    fetch("/api/repo-name")
-        .then(res => res.text())
-        .then(repo_title => {
-            console.log("Repo Title: " + repo_title);
-            document.getElementById("title").innerText = repo_title;
-        });
-
-    fetch("/api/repo-url")
-        .then(res => res.text())
-        .then(repo_url => {
-            console.log("Repo URL: " + repo_url);
-            if (repo_url) {
-                document.getElementById("title").setAttribute("href", repo_url);
-            }
-        });
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    updateCalendar();
-});
