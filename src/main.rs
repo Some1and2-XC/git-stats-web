@@ -93,10 +93,6 @@ impl CantFindRepoError {
             message,
         };
     }
-
-    fn to_string(&self) -> &str {
-        return &self.message;
-    }
 }
 
 impl ResponseError for CantFindRepoError {
