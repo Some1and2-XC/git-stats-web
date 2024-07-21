@@ -1,6 +1,6 @@
 use cli::CliArgs;
 use git::fetch_repo;
-use git2::{DiffOptions, Repository};
+use git2::Repository;
 use std::{fmt::Display, path::Path, sync::{Arc, Mutex}};
 use serde::{Serialize, Deserialize};
 use clap::Parser;
@@ -17,6 +17,7 @@ mod prediction;
 mod git;
 mod utils;
 mod db;
+mod templates;
 
 static SESSION_SIGNING_KEY: &[u8] = &[0; 64];
 static LOG_ENV_VAR: &str = "RUST_LOG";
@@ -83,13 +84,6 @@ async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
     }
 
     return url.to_string();
-}
-
-#[derive(Serialize)]
-struct ResponseInformation {
-    site: String,
-    username: String,
-    repo: String,
 }
 
 #[derive(Debug)]
@@ -231,12 +225,13 @@ async fn main() -> std::io::Result<()> {
                 .cookie_secure(false)
                 .build(),
             )
+            .service(web::resource("/repo").to(templates::calendar::calendar))
             .service(web::resource("/api/data").to(get_data))
             .service(web::resource("/api/repo-name").to(repo_name))
             .service(web::resource("/api/repo-url").to(repo_url))
             .service(get_project)
 
-            .service(Files::new("/", "static")
+            .service(Files::new("/static", "static")
                 .index_file("index.html")
                 // .show_files_listing() // Tree shows static files
                 // .prefer_utf8(true)
