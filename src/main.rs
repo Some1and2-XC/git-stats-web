@@ -10,6 +10,8 @@ use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, 
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 
+use maud::html;
+
 mod cli;
 mod prediction;
 mod git;
@@ -22,12 +24,20 @@ static LOG_ENV_VAR: &str = "RUST_LOG";
 use i64 as Timestamp;
 
 async fn not_found(_req: HttpRequest) -> HttpResponse {
-    let response = "<h1>404 Not FOUND!</h1>".to_string() +
-        "<hr />" +
-        "<p>Golly gee, the page you're looking for can't be found! Maybe try a different page or go back to the <a href='/'>homepage</a>?</p>";
+    let response = html! {
+        h1 { "404 Not FOUND!" }
+        hr;
+        p {
+            "Golly gee, the page you're looking for can't be found! Maybe try a different page or go back to the "
+            a href="/" {
+                "homepage"
+            }
+            "?"
+        }
+    };
     return HttpResponse::Ok()
         .content_type(ContentType::html())
-        .body(response);
+        .body(response.into_string());
 }
 
 #[derive(Serialize, Deserialize, Debug)]
