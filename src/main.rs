@@ -1,12 +1,11 @@
 use cli::CliArgs;
-use git::fetch_repo;
 use git2::Repository;
-use std::{fmt::Display, path::Path, sync::{Arc, Mutex}};
+use std::{path::Path, sync::{Arc, Mutex}};
 use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
 
-use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, ResponseError};
+use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 

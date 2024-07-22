@@ -26,15 +26,17 @@ impl WithBase for Markup {
                     script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.13/index.global.min.js" {}
                     script src="/static/index.js" {}
 
-                    // Compiled and minified CSS
+                    // Marterialize Compiled and minified CSS
                     link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" {}
 
-                    // Compiled and minified JavaScript
+                    // Marterialize Compiled and minified JavaScript
                     script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js" {}
+
+                    // Marterialize fonts
+                    link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" {}
 
                     // Font Awesome
                     link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous" {}
-
 
                 }
                 body {
