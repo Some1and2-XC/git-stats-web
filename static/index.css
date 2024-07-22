@@ -1,5 +1,6 @@
 :root {
-    --background-color: #141414;
+    /* --background-color: #141414; */
+    --background-color: black;
     --primary-color: white;
 
     color: var(--primary-color);
@@ -19,12 +20,11 @@ body {
 }
 
 #header {
-    opacity: 1;
     transition: 0.2s;
 }
 
 #header[hidden] {
-    opacity: 0;
+    transform: translateY(-100%);
 }
 
 .fc-list-day-text {

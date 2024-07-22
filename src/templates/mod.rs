@@ -13,4 +13,4 @@ pub use pages::calendar;
 mod components;
 pub use components::header;
 pub use components::icon;
-pub use components::example_section;
+pub use components::home_carousel;

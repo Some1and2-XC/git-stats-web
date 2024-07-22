@@ -1,14 +1,15 @@
 use maud::{html, Markup};
+
 use super::super::{
     WithBase,
     header,
-    example_section,
+    home_carousel,
 };
 
 pub async fn home() -> Markup {
     return html! {
         (header())
-        (example_section())
+        (home_carousel())
         h1 {
             "This is the homepage!"
         }

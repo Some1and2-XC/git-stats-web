@@ -4,5 +4,5 @@ pub use header::header;
 mod icon;
 pub use icon::icon;
 
-mod example_section;
-pub use example_section::example_section;
+mod home_carousel;
+pub use home_carousel::home_carousel;

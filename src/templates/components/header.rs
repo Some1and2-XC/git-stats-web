@@ -17,11 +17,13 @@ pub fn header() -> Markup {
             width: 100%;
 
             color: var(--primary-color);
-            background-color: red;
+            background-color: black;
 
             padding: 5px;
             border-bottom: 1px solid var(--primary-color);
+            /*
             box-shadow: 2px 5px 15px -5px var(--primary-color);
+            */
         "#{
             a href="/" style=r#"
                 display: flex;
@@ -29,7 +31,7 @@ pub fn header() -> Markup {
             "# {
                 (icon())
                 h1 {
-                    "Git Stats"
+                    "T-DY"
                 }
             }
         }
