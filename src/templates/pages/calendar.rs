@@ -1,6 +1,9 @@
 use actix_web::web;
 use maud::{html, Markup, PreEscaped};
-use super::WithBase;
+use super::super::{
+    WithBase,
+    header,
+};
 
 pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
 
@@ -8,6 +11,7 @@ pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
     let full_url = format!("https://{site}/{username}/{repo}");
 
     return html! {
+        (header())
         div style=r#"
             display: flex;
             align-items: center;

@@ -31,5 +31,14 @@ function updateCalendar(url) {
             });
             calendar.render();
         });
+}
 
+window.onscroll = (e) => {
+    let element = document.getElementById("header");
+
+    if (window.scrollY > 20) {
+        element.removeAttribute("hidden");
+    } else {
+        element.setAttribute("hidden", "");
+    }
 }

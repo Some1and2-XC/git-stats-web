@@ -116,7 +116,6 @@ impl Display for CantFindRepoError {
 }
 
 
-#[actix_web::get("/api/repo/{site}/{username}/{repo}")]
 async fn get_project(path: web::Path<(String, String, String)>, args: Data<Arc<Mutex<CliArgs>>>) -> Result<Json<Vec<CalendarValue>>, CantFindRepoError> {
     let unlocked_args = args.lock().unwrap();
 
@@ -225,11 +224,17 @@ async fn main() -> std::io::Result<()> {
                 .cookie_secure(false)
                 .build(),
             )
+
+            .service(web::resource("/").to(templates::home::home))
             .service(web::resource("/repo/{site}/{username}/{repo}").to(templates::calendar::calendar))
-            .service(web::resource("/api/data").to(get_data))
-            .service(web::resource("/api/repo-name").to(repo_name))
-            .service(web::resource("/api/repo-url").to(repo_url))
-            .service(get_project)
+
+            .service(
+                web::scope("/api")
+                    .service(web::resource("/data").to(get_data))
+                    .service(web::resource("/repo-name").to(repo_name))
+                    .service(web::resource("/repo-url").to(repo_url))
+                    .service(web::resource("/repo/{site}/{username}/{repo}").to(get_data))
+                )
 
             .service(Files::new("/static", "static")
                 // .index_file("index.html")
