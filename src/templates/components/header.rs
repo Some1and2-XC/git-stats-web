@@ -23,9 +23,14 @@ pub fn header() -> Markup {
             border-bottom: 1px solid var(--primary-color);
             box-shadow: 2px 5px 15px -5px var(--primary-color);
         "#{
-            (icon())
-            h1 {
-                "Git Stats"
+            a href="/" style=r#"
+                display: flex;
+                color: white;
+            "# {
+                (icon())
+                h1 {
+                    "Git Stats"
+                }
             }
         }
     };

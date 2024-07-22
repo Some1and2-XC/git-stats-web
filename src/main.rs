@@ -86,6 +86,7 @@ async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
     return url.to_string();
 }
 
+/*
 #[derive(Debug)]
 struct CantFindRepoError {
     pub message: String,
@@ -114,7 +115,6 @@ impl Display for CantFindRepoError {
         return write!(f, "{}", self.message);
     }
 }
-
 
 async fn get_project(path: web::Path<(String, String, String)>, args: Data<Arc<Mutex<CliArgs>>>) -> Result<Json<Vec<CalendarValue>>, CantFindRepoError> {
     let unlocked_args = args.lock().unwrap();
@@ -145,6 +145,7 @@ async fn get_project(path: web::Path<(String, String, String)>, args: Data<Arc<M
 
     return Ok(Json(utils::calculate_data(&unlocked_args, &repo)));
 }
+*/
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
