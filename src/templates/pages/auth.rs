@@ -65,9 +65,11 @@ fn make_alt_link(text: &str, url: &str) -> Markup {
 pub async fn login() -> Markup {
 
     let page_content = html! {
-        p { "this is the login page" }
+        input name="email" type="text" placeholder="Enter Email" {}
+        input name="password" type="password" placeholder="Enter Password" {}
+        label for="remember" { "Remember me" }
+        input id="remember" type="checkbox" defaultChecked {}
     };
-
 
     return html! {
 
@@ -80,10 +82,14 @@ pub async fn login() -> Markup {
 pub async fn signup() -> Markup {
 
     let page_content = html! {
-        p {
-            "This is the signup page"
-        }
+        input name="email" type="text" placeholder="Enter Email" {}
+        input name="username" type="text" placeholder="Enter Username" {}
+        input name="password" type="password" placeholder="Enter Password" {}
+        input name="password2" type="password" placeholder="Re-enter password" {}
+        label for="remember" { "Remember me" }
+        input id="remember" type="checkbox" checked {}
     };
+
 
     return html! {
         (header())
