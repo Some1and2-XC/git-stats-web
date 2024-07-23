@@ -4,7 +4,9 @@ pub fn home_carousel() -> Markup {
     return html!{
 
         div.carousel style=r#"
-            height: 100vh;
+
+            padding-top: 91px;
+            height: 100vh; /* Subtracts the height of the navbar */
 
             background: var(--background-color);
 

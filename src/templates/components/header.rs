@@ -4,8 +4,9 @@ use super::super::icon;
 
 pub fn header() -> Markup {
     return html! {
-        div #header hidden style=r#"
-
+        div #header
+            // hidden
+            style=r#"
             display: flex;
             position: fixed;
 

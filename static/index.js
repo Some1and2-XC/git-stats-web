@@ -33,6 +33,7 @@ function updateCalendar(url) {
         });
 }
 
+/*
 window.onscroll = (e) => {
     let element = document.getElementById("header");
 
@@ -42,3 +43,4 @@ window.onscroll = (e) => {
         element.setAttribute("hidden", "");
     }
 }
+*/
