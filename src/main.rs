@@ -226,6 +226,8 @@ async fn main() -> std::io::Result<()> {
             )
 
             .service(web::resource("/").to(templates::home::home))
+            .service(web::resource("/login").to(templates::auth::login))
+            .service(web::resource("/sign-up").to(templates::auth::signup))
             .service(web::resource("/repo/{site}/{username}/{repo}").to(templates::calendar::calendar))
 
             .service(

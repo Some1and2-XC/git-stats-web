@@ -42,7 +42,7 @@ body {
 }
 
 #header[hidden] {
-    transform: translateY(-100%);
+    transform: translateY(-150%);
 }
 
 .fc-list-day-text {

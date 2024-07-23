@@ -1,5 +1,5 @@
 mod header;
-pub use header::{header, header_spacer, get_header_spacer_size};
+pub use header::{header, header_spacer, header_hidden_on_top, get_header_spacer_size};
 
 mod icon;
 pub use icon::icon;
