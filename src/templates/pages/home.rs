@@ -3,14 +3,15 @@ use maud::{html, Markup};
 use super::super::{
     WithBase,
     header,
+    header_spacer,
     home_carousel,
 };
 
 pub async fn home() -> Markup {
     return html! {
         (header())
+        (header_spacer())
         (home_carousel())
-
 
         /*
         div.row {

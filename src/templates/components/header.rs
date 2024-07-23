@@ -38,3 +38,14 @@ pub fn header() -> Markup {
         }
     };
 }
+
+pub fn header_spacer() -> Markup {
+    return html! {
+        div style=(format!("height: {}px", get_header_spacer_size())) {}
+    };
+}
+
+/// Function for getting the size of the header in pixeles for all device sizes
+pub fn get_header_spacer_size() -> usize {
+    return 86;
+}
