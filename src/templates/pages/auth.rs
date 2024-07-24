@@ -99,6 +99,6 @@ pub async fn signup() -> Markup {
     return html! {
         (header())
         (header_hidden_on_top())
-        (auth_card("SignUp", make_alt_link("Login", "/login"), "/", page_content))
+        (auth_card("SignUp", make_alt_link("Login", "/login"), "/sign-up", page_content))
     }.template_base();
 }

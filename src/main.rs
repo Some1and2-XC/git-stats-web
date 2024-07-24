@@ -231,7 +231,9 @@ async fn main() -> std::io::Result<()> {
             .route("/login", web::get().to(templates::auth::login))
             .route("/login", web::post().to(auth::login_handler))
 
-            .service(web::resource("/sign-up").to(templates::auth::signup))
+            .route("/sign-up", web::get().to(templates::auth::signup))
+            .route("/sign-up", web::post().to(auth::signup_handler))
+
             .service(web::resource("/repo/{site}/{username}/{repo}").to(templates::calendar::calendar))
 
             .service(

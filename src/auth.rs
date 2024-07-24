@@ -16,3 +16,16 @@ pub struct LoginFormData {
 pub async fn login_handler(info: web::Form<LoginFormData>) -> String {
     return format!("Got some stuff! `{:?}`", info.into_inner());
 }
+
+#[derive(Deserialize, Debug)]
+pub struct SignupFormData {
+    pub email: String,
+    pub username: String,
+    pub password: String,
+    pub password2: String,
+    pub remember: Option<String>,
+}
+
+pub async fn signup_handler(info: web::Form<SignupFormData>) -> String {
+    return format!("Got some stuff! `{:?}`", info.into_inner());
+}
