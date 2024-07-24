@@ -70,7 +70,7 @@ pub async fn login() -> Markup {
         input name="password" type="password" placeholder="Enter Password" {}
         div style="display: flex; gap: 5px;" {
             label for="remember" { "Remember me" }
-            input id="remember" type="checkbox" checked {}
+            input id="remember" type="checkbox" name="remember" checked {}
         }
     };
 
@@ -78,7 +78,7 @@ pub async fn login() -> Markup {
 
         (header())
         (header_hidden_on_top())
-        (auth_card("Login", make_alt_link("Signup", "/sign-up"), "/", page_content))
+        (auth_card("Login", make_alt_link("Signup", "/sign-up"), "/login", page_content))
     }.template_base();
 }
 
@@ -91,7 +91,7 @@ pub async fn signup() -> Markup {
         input name="password2" type="password" placeholder="Re-enter password" {}
         div style="display: flex; gap: 5px;" {
             label for="remember" { "Remember me" }
-            input id="remember" type="checkbox" checked {}
+            input id="remember" type="checkbox" name="remember" checked {}
         }
     };
 

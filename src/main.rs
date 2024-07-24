@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
 
-use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{guard, http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 
@@ -17,6 +17,7 @@ mod git;
 mod utils;
 mod db;
 mod templates;
+mod auth;
 
 static SESSION_SIGNING_KEY: &[u8] = &[0; 64];
 static LOG_ENV_VAR: &str = "RUST_LOG";
@@ -226,7 +227,10 @@ async fn main() -> std::io::Result<()> {
             )
 
             .service(web::resource("/").to(templates::home::home))
-            .service(web::resource("/login").to(templates::auth::login))
+
+            .route("/login", web::get().to(templates::auth::login))
+            .route("/login", web::post().to(auth::login_handler))
+
             .service(web::resource("/sign-up").to(templates::auth::signup))
             .service(web::resource("/repo/{site}/{username}/{repo}").to(templates::calendar::calendar))
 
