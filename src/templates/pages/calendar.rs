@@ -3,6 +3,7 @@ use maud::{html, Markup, PreEscaped};
 use super::super::{
     WithBase,
     header,
+    header_hidden_on_top,
 };
 
 pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
@@ -12,6 +13,7 @@ pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
 
     return html! {
         (header())
+        (header_hidden_on_top())
         div style=r#"
             display: flex;
             align-items: center;

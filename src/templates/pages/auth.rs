@@ -28,19 +28,20 @@ fn auth_card(title: &str, alt: Markup, url: &str, content: Markup) -> Markup {
 
                 background-color: rgba(0, 0, 0, 0.6),
 
-                width: 200px;
+                width: 150px;
+                max-width: 95vw;
+
                 padding: 15px;
             "# {
                 h1 style="margin: 0" {
                     (title)
                 }
                 (alt)
-                hr style="margin: 20px 0" {}
 
                 /* Form submission data can be formatted here */
                 form method="POST" action=(url) {
                     (content)
-                    button
+                    button.pillow-button
                         href=""
                         style="margin: 25px 0 0 0"
                         type="submit"
@@ -67,8 +68,10 @@ pub async fn login() -> Markup {
     let page_content = html! {
         input name="email" type="text" placeholder="Enter Email" {}
         input name="password" type="password" placeholder="Enter Password" {}
-        label for="remember" { "Remember me" }
-        input id="remember" type="checkbox" defaultChecked {}
+        div style="display: flex; gap: 5px;" {
+            label for="remember" { "Remember me" }
+            input id="remember" type="checkbox" checked {}
+        }
     };
 
     return html! {
@@ -86,8 +89,10 @@ pub async fn signup() -> Markup {
         input name="username" type="text" placeholder="Enter Username" {}
         input name="password" type="password" placeholder="Enter Password" {}
         input name="password2" type="password" placeholder="Re-enter password" {}
-        label for="remember" { "Remember me" }
-        input id="remember" type="checkbox" checked {}
+        div style="display: flex; gap: 5px;" {
+            label for="remember" { "Remember me" }
+            input id="remember" type="checkbox" checked {}
+        }
     };
 
 

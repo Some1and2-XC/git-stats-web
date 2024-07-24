@@ -41,12 +41,24 @@ body {
     margin: 0;
 }
 
+[type="checkbox"] {
+    opacity: 1 !important;
+    position: initial !important;
+}
+
 #header {
     transition: 0.2s;
 }
 
 #header[hidden] {
     transform: translateY(-150%);
+}
+
+.pillow-button {
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    padding: 8px;
+    border-radius: 99999px;
 }
 
 .fc-list-day-text {
