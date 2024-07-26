@@ -5,7 +5,9 @@ use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
 
-use actix_web::{guard, http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
+use sqlx::{migrate::MigrateDatabase, query, Sqlite, SqlitePool};
+
+use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 
@@ -19,8 +21,10 @@ mod db;
 mod templates;
 mod auth;
 
-static SESSION_SIGNING_KEY: &[u8] = &[0; 64];
-static LOG_ENV_VAR: &str = "RUST_LOG";
+const DB_URL: &str = "sqlite://sqlite.db";
+
+const SESSION_SIGNING_KEY: &[u8] = &[0; 64];
+const LOG_ENV_VAR: &str = "RUST_LOG";
 
 use i64 as Timestamp;
 
@@ -201,6 +205,32 @@ async fn main() -> std::io::Result<()> {
     ));
 
     drop(unlocked_args); // releases the mutex
+
+    debug!("Initializing Database!");
+
+    if !Sqlite::database_exists(DB_URL).await.unwrap_or(false) {
+        info!("Creating Database: {}", DB_URL);
+        match Sqlite::create_database(DB_URL).await {
+            Ok(_) => info!("Created DB Successfully!"),
+            Err(e) => panic!("Error: {}", e),
+        }
+    } else {
+        info!("Database Already Exists!");
+    }
+
+    let db = SqlitePool::connect(DB_URL).await.unwrap();
+
+    let db_schema_filename = "schema.sql";
+
+    let db_schema = match std::fs::read_to_string(db_schema_filename) {
+        Ok(v) => v,
+        Err(_) => {
+            info!("Can't schema file: `{}`", db_schema_filename);
+            String::new()
+        },
+    };
+
+    let _result = query(&db_schema).execute(&db).await.unwrap();
 
     debug!("Initialized repo!");
 
