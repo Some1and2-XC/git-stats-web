@@ -90,72 +90,11 @@ async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
     return url.to_string();
 }
 
-/*
-#[derive(Debug)]
-struct CantFindRepoError {
-    pub message: String,
-}
-
-impl CantFindRepoError {
-    fn new(message: String) -> Self {
-        return Self {
-            message,
-        };
-    }
-}
-
-impl ResponseError for CantFindRepoError {
-    fn status_code(&self) -> actix_web::http::StatusCode {
-        return actix_web::http::StatusCode::from_u16(500).unwrap();
-    }
-
-    fn error_response(&self) -> HttpResponse<actix_web::body::BoxBody> {
-        return HttpResponse::Ok().body("It seems as though a repo can't be constructed.");
-    }
-}
-
-impl Display for CantFindRepoError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(f, "{}", self.message);
-    }
-}
-
-async fn get_project(path: web::Path<(String, String, String)>, args: Data<Arc<Mutex<CliArgs>>>) -> Result<Json<Vec<CalendarValue>>, CantFindRepoError> {
-    let unlocked_args = args.lock().unwrap();
-
-    let (site, username, repo) = path.into_inner();
-    let file_path = Path::new(&unlocked_args.tmp)
-        .join(&site)
-        .join(&username)
-        .join(&repo)
-        ;
-
-    // If the directory isn't found
-    //
-    let repo = match file_path.join(".git").is_dir() {
-        false => {
-            info!("Cloning repo: {repo}");
-            match fetch_repo(
-                &format!("https://{site}/{username}/{repo}"),
-                &unlocked_args.ssh_key,
-                file_path.as_path()
-                ) {
-                    Ok(v) => v,
-                    Err(e) => return Err(CantFindRepoError::new(e.to_string())),
-            }
-        },
-        true => Repository::open(file_path).unwrap(),
-    };
-
-    return Ok(Json(utils::calculate_data(&unlocked_args, &repo)));
-}
-*/
-
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
 
     // Gets CLI arguments
-    let args = Arc::new(Mutex::new({
+    let args = Data::new({
         let mut args = cli::CliArgs::parse();
         let terminator = ".git";
         if args.url.ends_with(terminator) {
@@ -164,31 +103,29 @@ async fn main() -> std::io::Result<()> {
                 .to_string();
         }
         args
-    }));
-
-    let unlocked_args = args.lock().unwrap();
+    });
 
     // Initializes the logger
-    if let Some(level) = unlocked_args.log.to_level() {
+    if let Some(level) = args.log.to_level() {
         std::env::set_var(LOG_ENV_VAR, level.to_string());
     }
 
     let env = env_logger::Env::new().filter(LOG_ENV_VAR);
     env_logger::init_from_env(env);
 
-    let src_url = &unlocked_args.url;
+    let src_url = &args.url;
 
     let url = utils::get_path(src_url);
 
     // Fetches repo
-    let repo = Arc::new(Mutex::new(
+    let repo = Mutex::new(
         match url.scheme() {
             "http" | "https" | "ssh" => {
                 let file_path = format!("{}{}", url.authority(), url.path()).to_lowercase();
                 let repo = git::fetch_repo(
                     src_url,
-                    &unlocked_args.ssh_key,
-                    Path::new(&unlocked_args.tmp.to_string()).join(&file_path).as_path(),
+                    &args.ssh_key,
+                    Path::new(&args.tmp.to_string()).join(&file_path).as_path(),
                     ).unwrap();
                 info!("Repo Cloned to `{file_path}`!");
                 repo
@@ -202,9 +139,7 @@ async fn main() -> std::io::Result<()> {
                 panic!("Unknown Format!");
             }
         }
-    ));
-
-    drop(unlocked_args); // releases the mutex
+    );
 
     debug!("Initializing Database!");
 
@@ -218,10 +153,8 @@ async fn main() -> std::io::Result<()> {
         info!("Database Already Exists!");
     }
 
-    let db = SqlitePool::connect(DB_URL).await.unwrap();
-
+    let db = Data::new(SqlitePool::connect(DB_URL).await.unwrap());
     let db_schema_filename = "schema.sql";
-
     let db_schema = match std::fs::read_to_string(db_schema_filename) {
         Ok(v) => v,
         Err(_) => {
@@ -230,7 +163,7 @@ async fn main() -> std::io::Result<()> {
         },
     };
 
-    let _result = query(&db_schema).execute(&db).await.unwrap();
+    let _result = query(&db_schema).execute(&**db).await.unwrap();
 
     debug!("Initialized repo!");
 
@@ -239,15 +172,15 @@ async fn main() -> std::io::Result<()> {
     let key = actix_web::cookie::Key::from(SESSION_SIGNING_KEY);
 
     let ip = "127.0.0.1";
-    let port = args.lock().unwrap().server_port;
+    let port = args.server_port;
 
     info!("Starting HTTP server at `{ip}:{port}`!");
 
     HttpServer::new(move || {
 
         App::new()
-            .app_data(Data::new(repo.clone()))
-            .app_data(Data::new(args.clone()))
+            .app_data(Data::clone(&args))
+            .app_data(Data::clone(&db))
             .wrap(middleware::Logger::default())
             .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::Compress::default())
