@@ -23,7 +23,7 @@ pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
             object type="image/svg+xml" data="/static/icon.svg" style="height: 5rem; padding-right: 1rem;" {}
             div {
                 h1 {
-                    a target="_blank" href=(full_url) {
+                    a #calendar-source target="_blank" href=(full_url) {
                         (username)
                         "/"
                         (repo)

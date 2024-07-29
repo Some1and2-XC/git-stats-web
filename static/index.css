@@ -75,6 +75,14 @@ body {
         --fc-border-color: transparent;
     }
 
+    #header {
+        display: none;
+    }
+
+    #calendar-source {
+        font-size: 3.2rem;
+    }
+
     /* Fixes list taking too much space */
     .fc-view-harness {
         height: fit-content !important;
