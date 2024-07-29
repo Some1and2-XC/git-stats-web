@@ -5,6 +5,8 @@ use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
 
+use url::Url;
+
 use sqlx::{migrate::MigrateDatabase, query, Sqlite, SqlitePool};
 
 use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
@@ -55,17 +57,43 @@ struct CalendarValue {
 }
 
 /// Function for getting commit data and returning json
-async fn get_data(_req: HttpRequest, args: Data<Arc<Mutex<CliArgs>>>, repo: Data<Arc<Mutex<Repository>>>) -> Json<Vec<CalendarValue>> {
+async fn get_data(args: Data<CliArgs>, path: web::Path<(String, String, String)>) -> Json<Vec<CalendarValue>> {
 
-    let unlocked_repo = repo.lock().unwrap();
-    let unlocked_args = args.lock().unwrap();
+    let (domain, user, repo) = path.into_inner();
 
-    return Json(utils::calculate_data(&unlocked_args, &unlocked_repo));
+    let src_url = format!("https://{domain}/{user}/{repo}");
+    let url = Url::parse(&src_url).unwrap();
+
+    // Fetches repo
+    let repo = match url.scheme() {
+        "http" | "https" | "ssh" => {
+            let file_path = format!("{}{}", url.authority(), url.path()).to_lowercase();
+            let repo = git::fetch_repo(
+                &src_url,
+                &args.ssh_key,
+                Path::new(&args.tmp.to_string()).join(&file_path).as_path(),
+                ).unwrap();
+            info!("Repo Cloned to `{file_path}`!");
+            repo
+        },
+        /*
+        "file" => {
+            let directory = ".".to_string() + url.path();
+            info!("Found repo in directory: `{directory}`!");
+            Repository::init(directory).unwrap()
+        },
+        */
+        scheme => {
+            panic!("Can't use scheme: `{}`!", scheme);
+        }
+    };
+
+    return Json(utils::calculate_data(&*args, &repo));
 }
 
 /// Gets the name of the repository with link
-async fn repo_name(args: Data<Arc<Mutex<CliArgs>>>) -> String {
-    let url = utils::get_path(&args.lock().unwrap().url);
+async fn repo_name(args: Data<CliArgs>) -> String {
+    let url = utils::get_path(&args.url);
 
     if url.scheme() == "file" {
         return "LOCAL REPO".to_string();
@@ -80,8 +108,8 @@ async fn repo_name(args: Data<Arc<Mutex<CliArgs>>>) -> String {
 }
 
 /// Gets the URL of the repository
-async fn repo_url(args: Data<Arc<Mutex<CliArgs>>>) -> String {
-    let url = utils::get_path(&args.lock().unwrap().url);
+async fn repo_url(args: Data<CliArgs>) -> String {
+    let url = utils::get_path(&args.url);
 
     if !url.has_host() {
         return "".to_string();
@@ -116,30 +144,6 @@ async fn main() -> std::io::Result<()> {
     let src_url = &args.url;
 
     let url = utils::get_path(src_url);
-
-    // Fetches repo
-    let repo = Mutex::new(
-        match url.scheme() {
-            "http" | "https" | "ssh" => {
-                let file_path = format!("{}{}", url.authority(), url.path()).to_lowercase();
-                let repo = git::fetch_repo(
-                    src_url,
-                    &args.ssh_key,
-                    Path::new(&args.tmp.to_string()).join(&file_path).as_path(),
-                    ).unwrap();
-                info!("Repo Cloned to `{file_path}`!");
-                repo
-            },
-            "file" => {
-                let directory = ".".to_string() + url.path();
-                info!("Found repo in directory: `{directory}`!");
-                Repository::init(directory).unwrap()
-            },
-            _ => {
-                panic!("Unknown Format!");
-            }
-        }
-    );
 
     debug!("Initializing Database!");
 
