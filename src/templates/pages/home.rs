@@ -1,4 +1,8 @@
+use actix_session::Session;
+use log::debug;
 use maud::{html, Markup};
+
+use crate::auth::SESSION_USER_ID_KEY;
 
 use super::super::{
     WithBase,
@@ -7,7 +11,8 @@ use super::super::{
     home_carousel,
 };
 
-pub async fn home() -> Markup {
+pub async fn home(session: Session) -> Markup {
+
     return html! {
         (header())
         (header_spacer())

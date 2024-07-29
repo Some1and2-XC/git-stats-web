@@ -1,6 +1,6 @@
+use auth::SESSION_USER_ID_KEY;
 use cli::CliArgs;
-use git2::Repository;
-use std::{path::Path, sync::{Arc, Mutex}};
+use std::path::Path;
 use serde::{Serialize, Deserialize};
 use clap::Parser;
 use log::{debug, info};
@@ -9,8 +9,8 @@ use url::Url;
 
 use sqlx::{migrate::MigrateDatabase, query, Sqlite, SqlitePool};
 
-use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer};
-use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_files::Files;
 
 use maud::html;
@@ -22,6 +22,8 @@ mod utils;
 mod db;
 mod templates;
 mod auth;
+
+type DbPool = Data<SqlitePool>;
 
 const DB_URL: &str = "sqlite://sqlite.db";
 
@@ -118,6 +120,13 @@ async fn repo_url(args: Data<CliArgs>) -> String {
     return url.to_string();
 }
 
+async fn get_id(session: Session, db: DbPool) -> impl Responder {
+    return match auth::User::from_session(&session, db).await {
+        Some(v) => format!("ID: #{:0>8}", v.id.unwrap()),
+        None => "Not Signed In!".to_string(),
+    };
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
 
@@ -185,6 +194,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(Data::clone(&args))
             .app_data(Data::clone(&db))
+
             .wrap(middleware::Logger::default())
             .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::Compress::default())
@@ -200,6 +210,10 @@ async fn main() -> std::io::Result<()> {
 
             .route("/sign-up", web::get().to(templates::auth::signup))
             .route("/sign-up", web::post().to(auth::signup_handler))
+
+            .route("/logout", web::get().to(auth::logout))
+
+            .route("/get-id", web::get().to(get_id))
 
             .service(web::resource("/repo/{site}/{username}/{repo}").to(templates::calendar::calendar))
 
