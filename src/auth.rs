@@ -217,7 +217,7 @@ pub async fn login_handler(session: Session, db: DbPool, info: web::Form<LoginFo
 
     let form_data = info.into_inner();
 
-    let invalid_credentials: (String, http::StatusCode) = ("Invalid Credentials".into(), http::StatusCode::UNAUTHORIZED);
+    let invalid_credentials = Redirect::to("/login").see_other().customize();
 
     let user = match User::from_db_email(&form_data.email, db.clone()).await {
         Ok(v) => v,
@@ -230,7 +230,8 @@ pub async fn login_handler(session: Session, db: DbPool, info: web::Form<LoginFo
 
     user.to_session(&session);
 
-    return (format!("Form Data: `{:?}`\nUser Data: `{:?}`", form_data, user.update_login_date(db).await), http::StatusCode::OK);
+    // return (format!("Form Data: `{:?}`\nUser Data: `{:?}`", form_data, user.update_login_date(db).await), http::StatusCode::OK);
+    return Redirect::to("/").see_other().customize();
 }
 
 #[derive(Deserialize, Debug, FromRow)]

@@ -13,6 +13,8 @@ use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, 
 use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_files::Files;
 
+use dotenv::dotenv;
+
 use maud::html;
 
 mod cli;
@@ -127,6 +129,33 @@ async fn get_id(session: Session, db: DbPool) -> impl Responder {
     };
 }
 
+async fn get_info(session: Session, db: DbPool) -> impl Responder {
+    let user = match auth::User::from_session(&session, db).await {
+        Some(v) => v,
+        None => return "Not Logged In!".to_string(),
+    };
+
+    return format!("User: {:?}", user);
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GithubRequest {
+    pub code: String,
+}
+
+async fn github_callback(info: web::Query<GithubRequest>) -> impl Responder {
+
+    info!("Data: {:?}", info.into_inner());
+
+    return "Hello Wrld!".to_string();
+}
+
+#[derive(Debug)]
+pub struct GithubClient {
+    client_id: String,
+    client_secret: String,
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
 
@@ -189,12 +218,23 @@ async fn main() -> std::io::Result<()> {
 
     info!("Starting HTTP server at `{ip}:{port}`!");
 
+    dotenv().ok();
+
+    let github_client = Data::new(GithubClient {
+        client_id: std::env::var("CLIENT_ID").unwrap().to_string(),
+        client_secret: std::env::var("CLIENT_SECRET").unwrap().to_string(),
+    });
+
     HttpServer::new(move || {
 
         App::new()
+
+            // Sets global values
             .app_data(Data::clone(&args))
             .app_data(Data::clone(&db))
+            .app_data(Data::clone(&github_client))
 
+            // Sets middle wares
             .wrap(middleware::Logger::default())
             .wrap(middleware::NormalizePath::trim())
             .wrap(middleware::Compress::default())
@@ -203,8 +243,10 @@ async fn main() -> std::io::Result<()> {
                 .build(),
             )
 
+            // Home page
             .service(web::resource("/").to(templates::home::home))
 
+            // Auth
             .route("/login", web::get().to(templates::auth::login))
             .route("/login", web::post().to(auth::login_handler))
 
@@ -213,10 +255,17 @@ async fn main() -> std::io::Result<()> {
 
             .route("/logout", web::get().to(auth::logout))
 
-            .route("/get-id", web::get().to(get_id))
+            // Github Auth
+            .route("/github/callback", web::get().to(github_callback))
 
+            // Random attributes
+            .route("/get-id", web::get().to(get_id))
+            .route("/get-info", web::get().to(get_info))
+
+            // Sets the calendar url
             .service(web::resource("/repo/{site}/{username}/{repo}").to(templates::calendar::calendar))
 
+            // Sets api endpoints
             .service(
                 web::scope("/api")
                     .service(web::resource("/data").to(get_data))
@@ -225,6 +274,7 @@ async fn main() -> std::io::Result<()> {
                     .service(web::resource("/repo/{site}/{username}/{repo}").to(get_data))
                 )
 
+            // Sets the static server
             .service(Files::new("/static", "static")
                 // .index_file("index.html")
                 // .show_files_listing() // Tree shows static files
