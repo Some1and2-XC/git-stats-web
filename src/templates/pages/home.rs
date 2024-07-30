@@ -11,10 +11,9 @@ use super::super::{
     header,
     header_spacer,
     home_carousel,
-    super::GithubClient,
 };
 
-pub async fn home(session: Session, github_client: Data<GithubClient>) -> Markup {
+pub async fn home(session: Session) -> Markup {
 
     return html! {
         (header())
@@ -94,10 +93,6 @@ pub async fn home(session: Session, github_client: Data<GithubClient>) -> Markup
             p { b { "Get Started Today" } }
 
             p { "Join thousands of developers worldwide who rely on T-DY to streamline their workflow and gain valuable insights from their git repositories. Start visualizing your coding journey like never before." }
-        }
-
-        a href=(format!("https://github.com/login/oauth/authorize?client_id={}", github_client.client_id)) {
-            "Click here to login in with github!"
         }
 
     }.template_base();

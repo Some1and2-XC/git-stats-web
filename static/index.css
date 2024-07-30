@@ -2,6 +2,8 @@
     /* --background-color: #141414; */
     --background-color: black;
     --primary-color: white;
+    --link-color: #02b3f9;
+    --link-color-active: #036e99;
 
     color: var(--primary-color);
     background-color: var(--background-color);
@@ -59,6 +61,29 @@ body {
     color: var(--background-color);
     padding: 8px;
     border-radius: 99999px;
+}
+
+.auth-link {
+    fill: var(--primary-color);
+
+    height: 1em;
+    width: 1em;
+
+    border: 1px solid var(--link-color);
+    border-radius: 15px;
+
+    transition: 0.3s;
+}
+
+.auth-link > * {
+    margin: 3px;
+}
+
+.auth-link:hover {
+    fill: var(--link-color-active);
+    border: 1px solid var(--link-color-active);
+
+    transform: translateY(-5px);
 }
 
 .fc-list-day-text {
