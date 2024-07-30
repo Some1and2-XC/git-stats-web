@@ -37,7 +37,7 @@ fn auth_card(title: &str, alt: Markup, url: &str, content: Markup, github_client
                 padding: 15px;
             "# {
 
-                h1 style="margin: 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;" {
+                h1 style="margin: 0; display: flex; justify-content: space-between; flex-wrap: wrap;" {
                     (title)
 
                     div style="display: flex; align-items: center; height: 100%; flex-wrap: wrap;" {
