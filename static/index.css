@@ -21,6 +21,17 @@ p {
     font-size: 1.2rem;
 }
 
+a {
+    color: var(--link-color);
+    fill: var(--link-color);
+}
+
+a:hover {
+    color: var(--link-color-active);
+    fill: var(--link-color-active);
+}
+
+
 input {
     color: var(--primary-color);
 }
@@ -82,9 +93,7 @@ body {
 }
 
 .auth-link:hover {
-    fill: var(--link-color-active);
     border: 1px solid var(--link-color-active);
-
     transform: translateY(-5px);
 }
 

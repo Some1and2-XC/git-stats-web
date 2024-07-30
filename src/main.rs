@@ -1,5 +1,6 @@
 use auth::SESSION_USER_ID_KEY;
 use cli::CliArgs;
+use templates::WithBase;
 use std::path::Path;
 use serde::{Serialize, Deserialize};
 use clap::Parser;
@@ -45,7 +46,7 @@ async fn not_found(_req: HttpRequest) -> HttpResponse {
             }
             "?"
         }
-    };
+    }.template_base();
     return HttpResponse::Ok()
         .content_type(ContentType::html())
         .body(response.into_string());
@@ -145,9 +146,15 @@ pub struct GithubRequest {
 
 async fn github_callback(info: web::Query<GithubRequest>) -> impl Responder {
 
-    info!("Data: {:?}", info.into_inner());
+    return html! {
+        p {
+            "Your key is: "
+            code style="color: var(--link-color);" {
+                (info.into_inner().code)
+            }
+        }
 
-    return "Hello Wrld!".to_string();
+    }.template_base();
 }
 
 #[derive(Debug)]
