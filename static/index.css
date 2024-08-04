@@ -75,7 +75,7 @@ body {
     transform: translateY(-150%);
 }
 
-#media print {
+@media print {
     #header {
         display: none;
     }
