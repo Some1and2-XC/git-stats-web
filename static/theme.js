@@ -6,14 +6,14 @@ function toggle_theme() {
     }
 
     set_theme(new_theme);
-    window.sessionStorage.setItem("data-scheme", new_theme);
+    window.localStorage.setItem("data-scheme", new_theme);
 }
 
 function set_theme(new_theme) {
     document.documentElement.setAttribute("data-scheme", new_theme);
 }
 
-let saved_theme = window.sessionStorage.getItem("data-scheme");
+let saved_theme = window.localStorage.getItem("data-scheme");
 
 if (saved_theme !== null) {
     set_theme(saved_theme);
