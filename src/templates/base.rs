@@ -12,12 +12,11 @@ impl WithBase for Markup {
             (DOCTYPE)
             html lang="en" data-scheme="dark" {
                 head {
-                    title {
-                        "Git Stats"
-                    }
+                    title { "Git Stats" }
                     meta charset="utf-8" {}
                     link rel="icon" type="image/svg+xml" href="/static/icon.svg" {}
                     (Css("/static/index.css"))
+                    (Css("/static/theme.css"))
 
                     // JQuery
                     script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous" {}
@@ -25,6 +24,7 @@ impl WithBase for Markup {
                     // NPM full calendar
                     script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.13/index.global.min.js" {}
                     script src="/static/index.js" {}
+                    script src="/static/theme.js" {}
 
                     // Marterialize Compiled and minified CSS
                     link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" {}

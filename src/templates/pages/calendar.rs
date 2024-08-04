@@ -6,6 +6,7 @@ use super::super::{
     WithBase,
     header,
     header_hidden_on_top,
+    icon,
     super::errors::AppError,
 };
 
@@ -55,7 +56,7 @@ pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
             justify-content: left;
             width: 100%;
         "# {
-            object type="image/svg+xml" data="/static/icon.svg" style="height: 5rem; padding-right: 1rem;" {}
+            (icon())
             div {
                 h1 {
                     a #calendar-source target="_blank" href=(full_url) {

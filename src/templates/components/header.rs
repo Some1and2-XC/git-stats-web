@@ -36,14 +36,18 @@ pub fn header() -> Markup {
                 }
             }
 
-            div style="display: flex; gap: 15px;" {
-                a href="/login" { p {
-                    "Login"
-                } }
+            div style="display: flex; align-items: center; gap: 25px;" {
+                div style="display: flex; gap: 15px;" {
+                    a href="/login" { p {
+                        "Login"
+                    } }
 
-                a href="/sign-up" { p {
-                    "Sign-Up"
-                } }
+                    a href="/sign-up" { p {
+                        "Sign-Up"
+                    } }
+                }
+
+                .theme-toggle onclick="toggle_theme();" {}
             }
         }
     };
