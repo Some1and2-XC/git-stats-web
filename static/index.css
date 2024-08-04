@@ -77,7 +77,11 @@ body {
 
 @media print {
     #header {
-        display: none;
+        display: none !important;
+    }
+
+    .icon {
+        background-color: black !important;
     }
 }
 
