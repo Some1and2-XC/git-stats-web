@@ -1,17 +1,52 @@
-use actix_web::web;
+use actix_web::{http::StatusCode, web, HttpRequest};
 use maud::{html, Markup, PreEscaped};
+use url::Url;
+use serde::Deserialize;
 use super::super::{
     WithBase,
     header,
     header_hidden_on_top,
+    super::errors::AppError,
 };
 
-pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
+#[derive(Debug, Deserialize)]
+pub struct RepoUrl {
+    pub url: String,
+}
 
-    let (site, username, repo) = path.into_inner();
-    let full_url = format!("https://{site}/{username}/{repo}");
+// pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
+pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
 
-    return html! {
+    let params = match web::Query::<RepoUrl>::from_query((&req).query_string()) {
+        Ok(v) => v,
+        Err(_) => {
+            return Err(AppError {
+                cause: Some(format!("Can't parse `RepoUrl` from get request parameter. Parameters: `{}`", req.query_string())),
+                message: Some("Can't parse repo from get request parameter".to_string()),
+                error_type: StatusCode::BAD_REQUEST,
+            });
+        },
+    };
+
+    let full_url = match Url::parse(&params.0.url) {
+        Ok(v) => v,
+        Err(e) => {
+            let message = match e {
+                url::ParseError::RelativeUrlWithoutBase => "Can't parse URL from provided string: missing encoding!",
+                _ => "Can't parse URL from provided string!",
+            };
+
+            return Err(AppError {
+                cause: Some(format!("Can't Parse URL from provided string. Parameters: `{}`", req.query_string())),
+                message: Some(message.to_string()),
+                error_type: StatusCode::BAD_REQUEST,
+            });
+        },
+    };
+
+    let path = (&full_url).path().trim_matches('/');
+
+    return Ok(html! {
         (header())
         (header_hidden_on_top())
         div style=r#"
@@ -24,9 +59,7 @@ pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
             div {
                 h1 {
                     a #calendar-source target="_blank" href=(full_url) {
-                        (username)
-                        "/"
-                        (repo)
+                        (path)
                     }
                 }
             }
@@ -38,8 +71,8 @@ pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
         }
         script {
             (PreEscaped(format!(r#"
-                updateCalendar("/api/repo/{site}/{username}/{repo}");
+                updateCalendar("/api/repo/?url={full_url}");
                 "#)))
         }
-    }.template_base();
+    }.template_base());
 }

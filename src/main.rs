@@ -10,7 +10,7 @@ use url::Url;
 
 use sqlx::{migrate::MigrateDatabase, query, Sqlite, SqlitePool};
 
-use actix_web::{http::header::ContentType, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{http::{header::ContentType, StatusCode}, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_files::Files;
 
@@ -25,6 +25,7 @@ mod utils;
 mod db;
 mod templates;
 mod auth;
+mod errors;
 
 type DbPool = Data<SqlitePool>;
 
@@ -47,7 +48,7 @@ async fn not_found(_req: HttpRequest) -> HttpResponse {
             "?"
         }
     }.template_base();
-    return HttpResponse::Ok()
+    return HttpResponse::NotFound()
         .content_type(ContentType::html())
         .body(response.into_string());
 }
@@ -62,12 +63,30 @@ struct CalendarValue {
 }
 
 /// Function for getting commit data and returning json
-async fn get_data(args: Data<CliArgs>, path: web::Path<(String, String, String)>) -> Json<Vec<CalendarValue>> {
+async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<CalendarValue>>, errors::AppError> {
 
-    let (domain, user, repo) = path.into_inner();
+    let src_url = match web::Query::<templates::calendar::RepoUrl>::from_query((&req).query_string()) {
+        Ok(v) => v,
+        Err(_) => {
+            return Err(errors::AppError {
+                cause: Some(format!("Invalid get request parameters! Query: `{}`", req.query_string())),
+                message: Some("Invalid get request parameters!".to_string()),
+                error_type: StatusCode::BAD_REQUEST,
+            });
+        },
+    }.0.url;
 
-    let src_url = format!("https://{domain}/{user}/{repo}");
-    let url = Url::parse(&src_url).unwrap();
+    let url = match Url::parse(&src_url) {
+        Ok(v) => v,
+        Err(_) => {
+            return Err(errors::AppError {
+                cause: Some(format!("Failed to parse URL from: `{}`", src_url)),
+                message: Some(format!("Failed to parse URL from: `{}`", src_url)),
+                error_type: StatusCode::BAD_REQUEST,
+            });
+        },
+    };
+
 
     // Fetches repo
     let repo = match url.scheme() {
@@ -89,11 +108,15 @@ async fn get_data(args: Data<CliArgs>, path: web::Path<(String, String, String)>
         },
         */
         scheme => {
-            panic!("Can't use scheme: `{}`!", scheme);
+            return Err(errors::AppError {
+                cause: Some(format!("Can't use scheme on URL: {} (source URL: {})", scheme, url)),
+                message: Some(format!("Can't use scheme on URL: {}", scheme)),
+                error_type: StatusCode::BAD_REQUEST,
+            });
         }
     };
 
-    return Json(utils::calculate_data(&*args, &repo));
+    return Ok(Json(utils::calculate_data(&*args, &repo)));
 }
 
 /// Gets the name of the repository with link
@@ -270,7 +293,7 @@ async fn main() -> std::io::Result<()> {
             .route("/get-info", web::get().to(get_info))
 
             // Sets the calendar url
-            .service(web::resource("/repo/{site}/{username}/{repo}").to(templates::calendar::calendar))
+            .route("/repo", web::get().to(templates::calendar::calendar))
 
             // Sets api endpoints
             .service(
@@ -278,7 +301,8 @@ async fn main() -> std::io::Result<()> {
                     .service(web::resource("/data").to(get_data))
                     .service(web::resource("/repo-name").to(repo_name))
                     .service(web::resource("/repo-url").to(repo_url))
-                    .service(web::resource("/repo/{site}/{username}/{repo}").to(get_data))
+                    // .service(web::resource("/repo/{site}/{username}/{repo}").to(get_data))
+                    .route("/repo", web::get().to(get_data))
                 )
 
             // Sets the static server
