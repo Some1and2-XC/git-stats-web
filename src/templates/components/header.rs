@@ -18,7 +18,7 @@ pub fn header() -> Markup {
             width: 100%;
 
             color: var(--primary-color);
-            background-color: black;
+            background-color: var(--background-color);
 
             padding: 5px;
             border-bottom: 1px solid var(--primary-color);
@@ -28,7 +28,7 @@ pub fn header() -> Markup {
         "#{
             a href="/" style=r#"
                 display: flex;
-                color: white;
+                color: var(--primary-color);
             "# {
                 (icon())
                 h1 {

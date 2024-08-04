@@ -10,7 +10,7 @@ impl WithBase for Markup {
     fn template_base(self) -> Self {
         return html! {
             (DOCTYPE)
-            html lang="en" {
+            html lang="en" data-scheme="dark" {
                 head {
                     title {
                         "Git Stats"
