@@ -1,3 +1,9 @@
+mod repo_card;
+pub use repo_card::{
+    repo_card,
+    repo_card_list,
+};
+
 mod header;
 pub use header::{header, header_spacer, header_hidden_on_top, get_header_spacer_size};
 

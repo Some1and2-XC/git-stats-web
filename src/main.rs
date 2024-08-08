@@ -295,6 +295,9 @@ async fn main() -> std::io::Result<()> {
             // Sets the calendar url
             .route("/repo", web::get().to(templates::calendar::calendar))
 
+            // Sets the repo list url
+            .route("/repos", web::get().to(templates::repo_list::repo_list))
+
             // Sets api endpoints
             .service(
                 web::scope("/api")

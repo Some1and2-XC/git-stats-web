@@ -6,7 +6,6 @@ use maud::{html, Markup};
 use crate::auth::SESSION_USER_ID_KEY;
 
 use super::super::{
-    
     WithBase,
     header,
     header_spacer,

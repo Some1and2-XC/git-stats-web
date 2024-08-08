@@ -1,0 +1,40 @@
+.repo_card_list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    gap: 15px;
+    padding: 15px 0;
+}
+
+.repo_card {
+    display: flex;
+    align-content: center;
+    flex-basis: 30%;
+    overflow-y: auto;
+
+    background-color: var(--background-color);
+    border-radius: 15px;
+    border: 1px solid var(--primary-color);
+
+    box-shadow: 3px 2px 15px -10px var(--primary-color);
+
+    transition: 0.1s;
+}
+
+.repo_card:hover {
+    transform: translateY(-5px);
+}
+
+.repo_card > div > img {
+    border-radius: 999999999px;
+    margin: 5px;
+
+    width: auto;
+    height: auto;
+    max-width: 80%;
+}
+
+.repo_card > div {
+    flex: 1 1 auto;
+}

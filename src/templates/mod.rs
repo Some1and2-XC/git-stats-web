@@ -9,6 +9,7 @@ mod pages;
 pub use pages::home;
 pub use pages::calendar;
 pub use pages::auth;
+pub use pages::repo_list;
 
 // Imports for components
 mod components;
