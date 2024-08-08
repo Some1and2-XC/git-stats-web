@@ -3,9 +3,7 @@ use super::super::{
     WithBase,
     header,
     header_spacer,
-    components::{
-        repo_card_list,
-    },
+    components::repo_card_list,
 };
 
 pub async fn repo_list() -> Markup {
@@ -14,6 +12,10 @@ pub async fn repo_list() -> Markup {
         (header_spacer())
 
         (repo_card_list())
+
+        // Scrapes from Github API
+        script {
+        }
 
     ).template_base();
 }
