@@ -13,9 +13,5 @@ pub async fn repo_list() -> Markup {
 
         (repo_card_list())
 
-        // Scrapes from Github API
-        script {
-        }
-
     ).template_base();
 }
