@@ -30,3 +30,23 @@ CREATE TABLE IF NOT EXISTS Repos (
             ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS Commits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    repo_fk INTEGER NOT NULL,
+    user_fk INTEGER NOT NULL,
+    committer_username TEXT NOT NULL,
+    committer_email TEXT NOT NULL,
+    timestamp DATE NOT NULL,
+    date_created DATE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    last_modified DATE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    projected_start DATE, -- nullable on purpose
+    set_start DATE,       -- nullable on purpose
+    FOREIGN KEY (user_fk)
+        REFERENCES Users(id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE,
+    FOREIGN KEY (repo_fk)
+        REFERENCES Repos(id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE
+);
