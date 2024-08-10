@@ -19,7 +19,6 @@ use dotenv::dotenv;
 use maud::html;
 
 mod cli;
-mod prediction;
 mod git;
 mod utils;
 mod db;
@@ -27,14 +26,12 @@ mod templates;
 mod auth;
 mod errors;
 
-type DbPool = Data<SqlitePool>;
+use git_stats_web::{prediction, aliases::*};
 
 const DB_URL: &str = "sqlite://sqlite.db";
 
 const SESSION_SIGNING_KEY: &[u8] = &[0; 64];
 const LOG_ENV_VAR: &str = "RUST_LOG";
-
-use i64 as Timestamp;
 
 async fn not_found(_req: HttpRequest) -> HttpResponse {
     let response = html! {

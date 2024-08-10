@@ -1,6 +1,5 @@
 use std::collections::hash_map::HashMap;
-use super::Timestamp;
-
+use super::aliases::Timestamp;
 
 #[derive(Debug, Default, Clone)]
 pub struct PredictionAttributes {
