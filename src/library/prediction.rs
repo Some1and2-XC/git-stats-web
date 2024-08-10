@@ -1,15 +1,16 @@
 use std::collections::hash_map::HashMap;
 use super::aliases::Timestamp;
 
+/// A struct representing the attributes used for making a prediction.
 #[derive(Debug, Default, Clone)]
-pub struct PredictionAttributes {
+pub struct PredictionValues {
     sum: (i32, Timestamp),
     count: i32,
     min: (i32, Timestamp),
     max: (i32, Timestamp),
 }
 
-impl PredictionAttributes {
+impl PredictionValues {
     /// Makes Prediction based on its own values
     pub fn predict(&self, value: i32) -> Timestamp {
 
@@ -22,21 +23,36 @@ impl PredictionAttributes {
     }
 }
 
+/// Represents some of the values returned from git's diff stats.
+#[derive(Eq, Hash, PartialEq, Debug)]
+pub enum PredictionAttributes {
+    /// Represents the amount of files changed in a commit.
+    FilesChanged,
+    /// Represents the amount of lines added in a commit.
+    LinesAdded,
+    /// Represents the amount of lines removed in a commit.
+    LinesRemoved,
+}
+
+/// The struct holding data to be used in predictions.
 #[derive(Debug)]
 pub struct PredictionStructure {
-    history_map: HashMap<String, PredictionAttributes>,
-    keys: Vec<String>,
+    history_map: HashMap<PredictionAttributes, PredictionValues>,
 }
 
 impl PredictionStructure {
+    /// A method for creating a new `PredictionStructure`.
+    /// ```rust
+    /// # use git_stats_web::prediction::{PredictionStructure, PredictionAttributes};
+    /// # use std::collections::hash_map::HashMap;
+    /// let mut ps = PredictionStructure::new();
+    /// ps.insert_item(PredictionAttributes::LinesAdded, 5, 1000); // Adds an item
+    /// let map = vec![(PredictionAttributes::LinesAdded, 1)];
+    /// assert_eq!(ps.predict(map), 200);
+    /// ```
     pub fn new() -> Self {
         Self {
             history_map: HashMap::new(),
-            keys: vec![
-                "files_changed".to_string(),
-                "lines_added".to_string(),
-                "lines_removed".to_string()
-            ],
         }
     }
 
@@ -46,13 +62,11 @@ impl PredictionStructure {
     /// the value is the value of the attribute
     /// Returns `true` if a new value was added
     /// Returns `false` if a value was modified
-    pub fn insert_item(&mut self, key: String, value: i32, time: Timestamp) -> bool {
-
-        assert!(self.keys.contains(&key));
+    pub fn insert_item(&mut self, key: PredictionAttributes, value: i32, time: Timestamp) -> bool {
 
         let mut attributes = match self.history_map.get_mut(&key) {
             Some(v) => v.clone(),
-            None => PredictionAttributes::default(),
+            None => PredictionValues::default(),
         };
 
         // Updates sum and count
@@ -79,17 +93,11 @@ impl PredictionStructure {
     }
 
     /// Makes a prediction based on all the previous values it found
-    pub fn predict(&self, files_changed: i32, lines_added: i32, lines_removed: i32) -> Timestamp {
+    pub fn predict(&self, values: Vec<(PredictionAttributes, i32)>) -> Timestamp {
 
         let mut results = vec![];
 
-        let keys_and_values = [
-            ("files_changed".to_string(), files_changed),
-            ("lines_added".to_string(), lines_added),
-            ("lines_removed".to_string(), lines_removed),
-        ];
-
-        for (k, v) in keys_and_values {
+        for (k, v) in values {
             let pred_value = match self.history_map.get(&k) {
                 Some(v) => v,
                 None => continue,

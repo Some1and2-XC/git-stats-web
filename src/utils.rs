@@ -4,11 +4,12 @@ use log::debug;
 
 use git2::{DiffOptions, Repository};
 
+use git_stats_web::prediction::{PredictionAttributes, PredictionStructure};
+
 use super::{
     CliArgs,
     CalendarValue,
     git,
-    prediction,
 };
 
 /// Gets the path of a url from URI
@@ -36,7 +37,7 @@ pub fn calculate_data(args: &CliArgs, repo: &Repository) -> Vec<CalendarValue> {
 
     let session_time = args.time_allowed;
 
-    let mut prediction = prediction::PredictionStructure::new();
+    let mut prediction = PredictionStructure::new();
 
     // Adds data the commit_arr
     // let max_commit_depth = 25;
@@ -79,9 +80,9 @@ pub fn calculate_data(args: &CliArgs, repo: &Repository) -> Vec<CalendarValue> {
         commit_arr.push(commit_data);
 
         if delta_t < session_time {
-            prediction.insert_item("files_changed".to_string(), diff.files_changed() as i32, delta_t);
-            prediction.insert_item("lines_added".to_string(), diff.insertions() as i32, delta_t);
-            prediction.insert_item("lines_removed".to_string(), diff.deletions() as i32, delta_t);
+            prediction.insert_item(PredictionAttributes::FilesChanged, diff.files_changed() as i32, delta_t);
+            prediction.insert_item(PredictionAttributes::LinesAdded, diff.insertions() as i32, delta_t);
+            prediction.insert_item(PredictionAttributes::LinesRemoved, diff.deletions() as i32, delta_t);
         }
 
         head = parent;
@@ -96,10 +97,11 @@ pub fn calculate_data(args: &CliArgs, repo: &Repository) -> Vec<CalendarValue> {
             let item = items.last_mut().unwrap();
 
             // Makes prediction for last item
-            let prediction = prediction.predict(
-                item.files_changed,
-                item.lines_added,
-                item.lines_removed);
+            let prediction = prediction.predict(vec![
+                (PredictionAttributes::FilesChanged, item.files_changed),
+                (PredictionAttributes::LinesAdded, item.lines_added),
+                (PredictionAttributes::LinesRemoved, item.lines_removed),
+                ]);
 
             // Updates item with projections
             item.delta_t = prediction;

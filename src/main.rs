@@ -1,8 +1,7 @@
-use auth::SESSION_USER_ID_KEY;
 use cli::CliArgs;
 use templates::WithBase;
 use std::path::Path;
-use serde::{Serialize, Deserialize};
+use serde::Deserialize;
 use clap::Parser;
 use log::{debug, info};
 
@@ -26,7 +25,11 @@ mod templates;
 mod auth;
 mod errors;
 
-use git_stats_web::{prediction, aliases::*};
+use git_stats_web::{
+    prediction,
+    aliases::*,
+    calendar::CalendarValue
+};
 
 const DB_URL: &str = "sqlite://sqlite.db";
 
@@ -48,15 +51,6 @@ async fn not_found(_req: HttpRequest) -> HttpResponse {
     return HttpResponse::NotFound()
         .content_type(ContentType::html())
         .body(response.into_string());
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct CalendarValue {
-    pub title: String,
-    pub delta_t: Timestamp,
-    pub start: Timestamp,
-    pub end: Timestamp,
-    pub projected: bool,
 }
 
 /// Function for getting commit data and returning json
@@ -208,7 +202,7 @@ async fn main() -> std::io::Result<()> {
 
     let src_url = &args.url;
 
-    let url = utils::get_path(src_url);
+    let _url = utils::get_path(src_url);
 
     debug!("Initializing Database!");
 
