@@ -1,4 +1,3 @@
-use cli::CliArgs;
 use templates::WithBase;
 use std::path::Path;
 use serde::Deserialize;
@@ -17,18 +16,17 @@ use dotenv::dotenv;
 
 use maud::html;
 
-mod cli;
-mod git;
-mod utils;
 mod db;
 mod templates;
 mod auth;
 mod errors;
 
 use git_stats_web::{
-    prediction,
+    cli::{self, CliArgs},
+    git,
+    utils,
     aliases::*,
-    calendar::CalendarValue
+    calendar::CalendarValue,
 };
 
 const DB_URL: &str = "sqlite://sqlite.db";

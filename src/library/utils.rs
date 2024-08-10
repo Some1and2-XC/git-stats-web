@@ -4,11 +4,10 @@ use log::debug;
 
 use git2::{DiffOptions, Repository};
 
-use git_stats_web::prediction::{PredictionAttributes, PredictionStructure};
-
-use super::{
-    CliArgs,
-    CalendarValue,
+use crate::{
+    cli::CliArgs,
+    prediction::{PredictionAttributes, PredictionStructure},
+    calendar::CalendarValue,
     git,
 };
 

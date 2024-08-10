@@ -4,21 +4,31 @@ use git2::{Commit, Cred, RemoteCallbacks, Repository};
 use std::{env, path::Path};
 use anyhow::{Context, Result};
 use log::debug;
-use super::Timestamp;
+use crate::aliases::Timestamp;
 
+/// A struct that represents commit data.
 #[derive(Clone)]
 pub struct CommitData {
+    /// The message of the commit.
     pub message: String,
+    /// The timestamp of the commit.
     pub timestamp: Timestamp,
+    /// The timestamp of the previous commit.
     pub prev_timestamp: Timestamp,
+    /// The change in time between this commit and the previous.
     pub delta_t: Timestamp,
+    /// The amount of files changed in the commit.
     pub files_changed: i32,
+    /// The amount of lines added in the commit.
     pub lines_added: i32,
+    /// The amount of lines removed in the commit.
     pub lines_removed: i32,
+    /// If the previous timestamp was projected.
     pub projected: bool,
 }
 
 /// Function for cloning a repo
+/// Returns error if it can't clone the repo.
 pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<Repository> {
 
     // Gets the home directory
