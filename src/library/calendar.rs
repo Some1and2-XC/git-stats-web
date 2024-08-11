@@ -2,7 +2,7 @@ use super::aliases::Timestamp;
 use serde::{Deserialize, Serialize};
 
 /// A struct used for returning data from the calendar endpoint.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CalendarValue {
     /// The title of the commit
     pub title: String,

@@ -16,7 +16,6 @@ use dotenv::dotenv;
 
 use maud::html;
 
-mod db;
 mod templates;
 mod auth;
 mod errors;

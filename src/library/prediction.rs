@@ -3,7 +3,7 @@ use super::aliases::Timestamp;
 
 /// A struct representing the attributes used for making a prediction.
 #[derive(Debug, Default, Clone)]
-pub struct PredictionValues {
+struct PredictionValues {
     sum: (i32, Timestamp),
     count: i32,
     min: (i32, Timestamp),
@@ -24,7 +24,7 @@ impl PredictionValues {
 }
 
 /// Represents some of the values returned from git's diff stats.
-#[derive(Eq, Hash, PartialEq, Debug)]
+#[derive(Eq, Hash, PartialEq, Debug, Clone)]
 pub enum PredictionAttributes {
     /// Represents the amount of files changed in a commit.
     FilesChanged,
@@ -48,7 +48,7 @@ impl PredictionStructure {
     /// let mut ps = PredictionStructure::new();
     /// ps.insert_item(PredictionAttributes::LinesAdded, 5, 1000); // Adds an item
     /// let map = vec![(PredictionAttributes::LinesAdded, 1)]; // a list of attributes to predict by
-    /// assert_eq!(ps.predict(map), 200); // the response is 200, (using the ratio from 5:1 => 1000:200)
+    /// assert_eq!(ps.predict(&map), 200); // the response is 200, (using the ratio from 5:1 => 1000:200)
     /// ```
     pub fn new() -> Self {
         Self {
@@ -103,10 +103,10 @@ impl PredictionStructure {
     /// # use git_stats_web::prediction::{PredictionStructure, PredictionAttributes};
     /// let mut ps = PredictionStructure::new();
     /// ps.insert_item(PredictionAttributes::LinesAdded, 5, 1000);
-    /// assert_eq!(ps.predict(vec![(PredictionAttributes::LinesAdded, 5)]), 1000);
-    /// assert_eq!(ps.predict(vec![(PredictionAttributes::LinesAdded, 1)]), 200);
+    /// assert_eq!(ps.predict(&[(PredictionAttributes::LinesAdded, 5)]), 1000);
+    /// assert_eq!(ps.predict(&[(PredictionAttributes::LinesAdded, 1)]), 200);
     /// ```
-    pub fn predict(&self, values: Vec<(PredictionAttributes, i32)>) -> Timestamp {
+    pub fn predict(&self, values: &[(PredictionAttributes, i32)]) -> Timestamp {
 
         let mut results = vec![];
 
@@ -116,7 +116,7 @@ impl PredictionStructure {
                 None => continue,
             };
 
-            results.push(pred_value.predict(v));
+            results.push(pred_value.predict(v.clone()));
         }
 
         let response = results.iter().sum::<Timestamp>() / results.len() as Timestamp;
