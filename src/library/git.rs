@@ -1,5 +1,3 @@
-/// Module for holding utility functions for git methods
-
 use git2::{Commit, Cred, RemoteCallbacks, Repository};
 use std::{env, path::Path};
 use anyhow::{Context, Result};
