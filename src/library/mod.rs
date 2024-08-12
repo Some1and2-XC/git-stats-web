@@ -15,3 +15,6 @@ pub mod git;
 
 /// A module for misc utilities.
 pub mod utils;
+
+/// A module for application errors.
+pub mod errors;

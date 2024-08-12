@@ -18,12 +18,12 @@ use maud::html;
 
 mod templates;
 mod auth;
-mod errors;
 
 use git_stats_web::{
     cli::{self, CliArgs},
     git,
     utils,
+    errors,
     aliases::*,
     calendar::CalendarValue,
 };
