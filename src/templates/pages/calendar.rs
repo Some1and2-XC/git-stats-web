@@ -1,8 +1,9 @@
 use actix_web::{http::StatusCode, web, HttpRequest};
+use git_stats_web::aliases::Timestamp;
 use maud::{html, Markup, PreEscaped};
 use url::Url;
 use serde::Deserialize;
-use chrono::NaiveDateTime;
+use chrono::NaiveDate;
 
 use super::super::{
     WithBase,
@@ -15,8 +16,9 @@ use super::super::{
 #[derive(Debug, Deserialize)]
 pub struct RepoUrl {
     pub url: String,
-    pub date_end: Option<NaiveDateTime>,
-    pub date_start: Option<NaiveDateTime>,
+    pub date_end: Option<NaiveDate>,
+    pub date_start: Option<NaiveDate>,
+    pub time_allowed: Option<Timestamp>,
 }
 
 // pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {

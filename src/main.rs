@@ -75,7 +75,6 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
         },
     };
 
-
     // Fetches repo
     let repo = match url.scheme() {
         "http" | "https" | "ssh" => {
