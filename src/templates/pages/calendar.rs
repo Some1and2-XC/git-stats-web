@@ -2,6 +2,8 @@ use actix_web::{http::StatusCode, web, HttpRequest};
 use maud::{html, Markup, PreEscaped};
 use url::Url;
 use serde::Deserialize;
+use chrono::NaiveDateTime;
+
 use super::super::{
     WithBase,
     header,
@@ -13,6 +15,8 @@ use super::super::{
 #[derive(Debug, Deserialize)]
 pub struct RepoUrl {
     pub url: String,
+    pub date_end: Option<NaiveDateTime>,
+    pub date_start: Option<NaiveDateTime>,
 }
 
 // pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {

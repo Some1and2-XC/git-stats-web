@@ -2,7 +2,7 @@ use regex::Regex;
 use url::Url;
 use log::debug;
 
-use git2::{DiffOptions, Repository};
+use git2::{Commit, DiffOptions, Repository};
 
 use crate::{
     aliases::AnnotatedCalendarValue,
@@ -39,72 +39,77 @@ pub fn get_path(src_url: &str) -> Url {
     return Url::parse(&tmp_url).unwrap();
 }
 
+/// Function for getting all the commit data from a repository.
+fn recurs_search_trees(args: &CliArgs, repo: &Repository, commit: Commit, out_vec: &mut Vec<AnnotatedCalendarValue>, out_pred_struct: &mut PredictionStructure) -> () {
+
+    let mut diff_opts = DiffOptions::new();
+
+    let Ok(parent) = commit.parent(0) else {
+        return;
+    };
+
+    let diff = repo.diff_tree_to_tree(
+        Some(&parent.tree().unwrap()),
+        Some(&commit.tree().unwrap()),
+        Some(
+            diff_opts
+                .force_text(true)
+            )
+        )
+        .unwrap()
+        .stats()
+        .unwrap();
+
+    let timestamp = commit.time().seconds();
+    let prev_timestamp = parent.time().seconds();
+    let delta_t = timestamp - prev_timestamp;
+
+    let commit_data: AnnotatedCalendarValue = (
+        CalendarValue {
+            title: commit.message().unwrap_or("MESSAGE_NOT_FOUND").trim().to_string(),
+            delta_t,
+            start: prev_timestamp,
+            end: timestamp,
+            projected: false,
+        },
+        vec![
+            (PredictionAttributes::FilesChanged, diff.files_changed() as i32),
+            (PredictionAttributes::LinesAdded, diff.insertions() as i32),
+            (PredictionAttributes::LinesRemoved, diff.deletions() as i32),
+        ]
+    );
+
+    out_vec.push(commit_data);
+
+    if delta_t < args.time_allowed {
+        out_pred_struct.insert_item(PredictionAttributes::FilesChanged, diff.files_changed() as i32, delta_t);
+        out_pred_struct.insert_item(PredictionAttributes::LinesAdded, diff.insertions() as i32, delta_t);
+        out_pred_struct.insert_item(PredictionAttributes::LinesRemoved, diff.deletions() as i32, delta_t);
+    }
+
+    for parent in commit.parents() {
+        recurs_search_trees(args, repo, parent, out_vec, out_pred_struct);
+    }
+
+}
+
 /// Function for getting commit data and returning json
 pub fn calculate_data(args: &CliArgs, repo: &Repository) -> Vec<CalendarValue> {
 
     let mut commit_arr: Vec<AnnotatedCalendarValue> = Vec::new();
 
-    let mut head = git::get_head_commit(repo);
-
-    let session_time = args.time_allowed;
-
+    let head = git::get_head_commit(repo);
     let mut prediction = PredictionStructure::new();
+
+    // Gets all the data
+    recurs_search_trees(args, repo, head, &mut commit_arr, &mut prediction);
 
     // Adds data the commit_arr
     // let max_commit_depth = 25;
     // for _i in 0..max_commit_depth {
-    loop {
-
-        let mut diff_opts = DiffOptions::new();
-
-        let Ok(parent) = head.parent(0) else {
-            break;
-        };
-
-        let diff = repo.diff_tree_to_tree(
-            Some(&parent.tree().unwrap()),
-            Some(&head.tree().unwrap()),
-            Some(
-                diff_opts
-                    .force_text(true)
-                )
-            )
-            .unwrap()
-            .stats()
-            .unwrap();
-
-        let timestamp = head.time().seconds();
-        let prev_timestamp = parent.time().seconds();
-        let delta_t = timestamp - prev_timestamp;
-
-        let commit_data: AnnotatedCalendarValue = (
-            CalendarValue {
-                title: head.message().unwrap_or("MESSAGE_NOT_FOUND").trim().to_string(),
-                delta_t,
-                start: prev_timestamp,
-                end: timestamp,
-                projected: false,
-            },
-            vec![
-                (PredictionAttributes::FilesChanged, diff.files_changed() as i32),
-                (PredictionAttributes::LinesAdded, diff.insertions() as i32),
-                (PredictionAttributes::LinesRemoved, diff.deletions() as i32),
-            ]
-        );
-
-        commit_arr.push(commit_data);
-
-        if delta_t < session_time {
-            prediction.insert_item(PredictionAttributes::FilesChanged, diff.files_changed() as i32, delta_t);
-            prediction.insert_item(PredictionAttributes::LinesAdded, diff.insertions() as i32, delta_t);
-            prediction.insert_item(PredictionAttributes::LinesRemoved, diff.deletions() as i32, delta_t);
-        }
-
-        head = parent;
-    }
 
     let output_arr = commit_arr
-        .split_inclusive(|v| session_time <= v.0.delta_t)
+        .split_inclusive(|v| args.time_allowed <= v.0.delta_t)
         .collect::<Vec<&[AnnotatedCalendarValue]>>()
         .iter_mut()
         .map(|v| {
