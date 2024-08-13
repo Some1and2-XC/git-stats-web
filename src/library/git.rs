@@ -1,4 +1,4 @@
-use git2::{Commit, Cred, RemoteCallbacks, Repository};
+use git2::{AutotagOption, Commit, Cred, Direction, RemoteCallbacks, RemoteUpdateFlags, Repository};
 use std::{env, path::Path};
 use anyhow::{Context, Result};
 use log::debug;
@@ -38,10 +38,55 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
     debug!("Finished preparing builder");
 
     // Clones the repo
-    return Ok(match out_dir.is_dir() {
-        true => Repository::open(out_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?,
-        false => builder.clone(ssh_url, out_dir).with_context(|| format!("Can't clone repo to `{out_dir:?}` (do you have the right URL?)"))?,
-    });
+    if out_dir.is_dir() {
+        debug!("Updating Index...");
+        let repo = Repository::open(out_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?;
+
+
+        let remotes = repo.remotes()?;
+        debug!("Found remotes: {:?}",
+            remotes.iter().map(|v| v.unwrap()).collect::<Vec<&str>>()
+        );
+
+        let branches = repo.branches(None)?
+            .map(|branch_res| {
+                let (branch, _branch_type) = branch_res.unwrap();
+                branch.name().unwrap().unwrap().to_string()
+            })
+            .collect::<Vec<String>>();
+        debug!("Found branches: {branches:?}");
+
+        for remote_str in remotes.iter() {
+            let mut remote = repo.find_remote(remote_str.unwrap()).unwrap();
+
+            let ref_specs_raw = remote.fetch_refspecs().unwrap();
+            let ref_specs = ref_specs_raw
+                .iter().map(|v| { v.unwrap() })
+                .collect::<Vec<&str>>()
+                ;
+
+            let _ = match remote.fetch(&ref_specs, None, None) {
+                Ok(_) => (),
+                Err(v) => {
+                    debug!(
+                        "Can't clone from remote: {:?} with refspecs: {:?}. Error: {v:?}",
+                        remote.name(),
+                        ref_specs
+                        );
+                },
+            };
+
+            debug!("Fetching Updates...");
+
+        }
+
+        return Ok(repo);
+
+    } else {
+        debug!("Cloning for the first time...");
+        return Ok(builder.clone(ssh_url, out_dir).with_context(|| format!("Can't clone repo to `{out_dir:?}` (do you have the right URL?)"))?);
+    }
+
 }
 
 /// Gets the head commit from a repo
