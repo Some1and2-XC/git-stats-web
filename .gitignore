@@ -5,6 +5,6 @@ Cargo.lock
 tmp/
 
 .env
- 
+
 sqlite.db
 sqlite.db*

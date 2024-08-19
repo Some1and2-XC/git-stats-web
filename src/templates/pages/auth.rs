@@ -20,7 +20,7 @@ fn auth_card(title: &str, alt: Markup, url: &str, content: Markup, github_client
             align-items: center;
             align-content: center;
         "# {
-            div style=r#"
+            div .material style=r#"
                 position: absolute;
                 top: 40%;
                 transform: translateY(-50%);

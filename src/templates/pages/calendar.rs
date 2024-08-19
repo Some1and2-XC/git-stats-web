@@ -27,35 +27,51 @@ pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
     let params = match web::Query::<RepoUrl>::from_query((&req).query_string()) {
         Ok(v) => v,
         Err(_) => {
+            return Ok(html! {
+                "Missing Parameters!"
+            }.template_base());
+            /*
             return Err(AppError {
                 cause: Some(format!("Can't parse `RepoUrl` from get request parameter. Parameters: `{}`", req.query_string())),
                 message: Some("Can't parse repo from get request parameter".to_string()),
                 error_type: StatusCode::BAD_REQUEST,
             });
+            */
         },
     };
 
     let full_url = match Url::parse(&params.0.url) {
         Ok(v) => v,
         Err(e) => {
-            let message = match e {
-                url::ParseError::RelativeUrlWithoutBase => "Can't parse URL from provided string: missing encoding!",
-                _ => "Can't parse URL from provided string!",
-            };
 
-            return Err(AppError {
-                cause: Some(format!("Can't Parse URL from provided string. Parameters: `{}`", req.query_string())),
-                message: Some(message.to_string()),
-                error_type: StatusCode::BAD_REQUEST,
-            });
+            let output = Ok(html! {
+                p { "Can't parse URL!" }
+                a href="/" { "Home?" }
+            }.template_base());
+
+
+            if e != url::ParseError::RelativeUrlWithoutBase {
+                return output;
+            } else {
+                // Tries parsing again but adding https encoding
+                match Url::parse(&format!("https://{}", &params.0.url)) {
+                    Ok(v) => v,
+                    Err(_) => return output,
+                }
+            }
+
         },
     };
 
     let path = (&full_url).path().trim_matches('/');
 
     return Ok(html! {
+
+        /*
         (header())
         (header_hidden_on_top())
+        */
+
         div style=r#"
             display: flex;
             align-items: center;

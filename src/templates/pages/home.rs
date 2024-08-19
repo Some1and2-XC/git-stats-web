@@ -15,9 +15,16 @@ use super::super::{
 pub async fn home(session: Session) -> Markup {
 
     return html! {
-        (header())
-        (header_spacer())
-        (home_carousel())
+        /* (header()) */ 
+        /* (header_spacer()) */
+        /* (home_carousel()) */
+
+        form.search_box action="/repo" {
+            .search_bar {
+                input name="url" placeholder="Enter Git URL" {
+                }
+            }
+        }
 
         /*
         div.row {
@@ -67,7 +74,7 @@ pub async fn home(session: Session) -> Markup {
         }
         */
 
-
+        /*
         article {
             p { b { "T-DY: Transform Your Commit History into Insights" }}
 
@@ -93,6 +100,7 @@ pub async fn home(session: Session) -> Markup {
 
             p { "Join thousands of developers worldwide who rely on T-DY to streamline their workflow and gain valuable insights from their git repositories. Start visualizing your coding journey like never before." }
         }
+        */
 
     }.template_base();
 }

@@ -17,6 +17,7 @@ impl WithBase for Markup {
                     link rel="icon" type="image/svg+xml" href="/static/icon.svg" {}
                     (Css("/static/index.css"))
                     (Css("/static/theme.css"))
+                    (Css("/static/search.css"))
 
                     // JQuery
                     script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous" {}
@@ -41,6 +42,7 @@ impl WithBase for Markup {
                 }
                 body {
                     (self)
+                    .theme-toggle .theme-corner onclick="toggle_theme();" {}
                 }
             }
         };
