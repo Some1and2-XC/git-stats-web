@@ -76,6 +76,15 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
                 },
             };
 
+            let remote_list = remote
+                .list().unwrap()
+                .iter().map(|v| {
+                    v.name().to_string()
+                })
+                .collect::<Vec<String>>();
+
+            debug!("List: {:?}", remote_list);
+
             debug!("Fetching Updates...");
 
         }
