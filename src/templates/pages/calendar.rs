@@ -88,9 +88,9 @@ pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
             }
         }
         hr {}
-        #calendar {}
+        #calendar { }
         code.bottom-message {
-            "This report was automatically generated"
+            "Loading..."
         }
         script {
             (PreEscaped(format!(r#"
