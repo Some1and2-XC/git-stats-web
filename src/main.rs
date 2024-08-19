@@ -84,6 +84,7 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
                 &args.ssh_key,
                 Path::new(&args.tmp.to_string()).join(&file_path).as_path(),
                 ).unwrap();
+
             info!("Repo Cloned to `{file_path}`!");
             repo
         },
@@ -106,33 +107,7 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
     return Ok(Json(utils::calculate_data(&*args, &repo)));
 }
 
-/// Gets the name of the repository with link
-async fn repo_name(args: Data<CliArgs>) -> String {
-    let url = utils::get_path(&args.url);
-
-    if url.scheme() == "file" {
-        return "LOCAL REPO".to_string();
-    }
-
-    url.path() // Gets the path
-        .trim_start_matches("/") // Removes the starting / (if applicable)
-        .splitn(2, ".") // Gets the part before the .
-        .nth(0)
-        .unwrap()
-        .to_string()
-}
-
-/// Gets the URL of the repository
-async fn repo_url(args: Data<CliArgs>) -> String {
-    let url = utils::get_path(&args.url);
-
-    if !url.has_host() {
-        return "".to_string();
-    }
-
-    return url.to_string();
-}
-
+/*
 async fn get_id(session: Session, db: DbPool) -> impl Responder {
     return match auth::User::from_session(&session, db).await {
         Some(v) => format!("ID: #{:0>8}", v.id.unwrap()),
@@ -148,6 +123,7 @@ async fn get_info(session: Session, db: DbPool) -> impl Responder {
 
     return format!("User: {:?}", user);
 }
+*/
 
 #[derive(Debug, Deserialize)]
 pub struct GithubRequest {
@@ -276,8 +252,10 @@ async fn main() -> std::io::Result<()> {
             .route("/github/callback", web::get().to(github_callback))
 
             // Random attributes
+            /*
             .route("/get-id", web::get().to(get_id))
             .route("/get-info", web::get().to(get_info))
+            */
 
             // Sets the calendar url
             .route("/repo", web::get().to(templates::calendar::calendar))
@@ -288,11 +266,8 @@ async fn main() -> std::io::Result<()> {
             // Sets api endpoints
             .service(
                 web::scope("/api")
-                    .service(web::resource("/data").to(get_data))
-                    .service(web::resource("/repo-name").to(repo_name))
-                    .service(web::resource("/repo-url").to(repo_url))
-                    // .service(web::resource("/repo/{site}/{username}/{repo}").to(get_data))
                     .route("/repo", web::get().to(get_data))
+                    // .service(web::resource("/repo/{site}/{username}/{repo}").to(get_data))
                 )
 
             // Sets the static server

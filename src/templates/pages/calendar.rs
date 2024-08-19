@@ -1,4 +1,6 @@
-use actix_web::{http::StatusCode, web, HttpRequest};
+use std::error::Error;
+
+use actix_web::{http::StatusCode, web, HttpRequest, ResponseError};
 use git_stats_web::aliases::Timestamp;
 use maud::{html, Markup, PreEscaped};
 use url::Url;
@@ -26,10 +28,16 @@ pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
 
     let params = match web::Query::<RepoUrl>::from_query((&req).query_string()) {
         Ok(v) => v,
-        Err(_) => {
+        Err(e) => {
             return Ok(html! {
-                "Missing Parameters!"
+                h2 {
+                    "Error!"
+                }
+                p {
+                    (e.source().unwrap().to_string())
+                }
             }.template_base());
+
             /*
             return Err(AppError {
                 cause: Some(format!("Can't parse `RepoUrl` from get request parameter. Parameters: `{}`", req.query_string())),
@@ -37,6 +45,7 @@ pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
                 error_type: StatusCode::BAD_REQUEST,
             });
             */
+
         },
     };
 

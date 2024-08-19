@@ -17,7 +17,8 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
     };
 
     // Sets Credential callback
-    let mut callbacks = RemoteCallbacks::new();
+    let callbacks = RemoteCallbacks::new();
+    /*
     callbacks.credentials(|_url, username_from_url, _allowed_types| {
         Cred::ssh_key(username_from_url.unwrap(),
             None,
@@ -25,6 +26,7 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
             None,
         )
     });
+    */
     debug!("Generated Credentials");
 
     // Prepares fetch options
@@ -42,6 +44,13 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
         debug!("Updating Index...");
         let repo = Repository::open(out_dir).with_context(|| "Can't find the repo directory (do you have the right path?)")?;
 
+        let refs = repo.references_glob("refs/remotes/*/*").unwrap();
+        for refname in refs {
+            let oid = repo.refname_to_id(refname.unwrap().name().unwrap()).unwrap();
+            let object = repo.find_object(oid, None).unwrap();
+            repo.reset(&object, git2::ResetType::Hard, None).unwrap();
+        }
+        debug!("Updating Refs...");
 
         let remotes = repo.remotes()?;
         debug!("Found remotes: {:?}",
