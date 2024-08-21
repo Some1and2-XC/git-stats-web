@@ -43,9 +43,13 @@ pub struct CliArgs {
     #[clap(short, long, default_value=".ssh/id_ed25519")]
     pub ssh_key: String,
 
-    /// The amount of time in seconds that is allowed between commits
+    /// The amount of time in seconds that is allowed between commits.
     #[clap(short, long, default_value="18000")]
     pub time_allowed: i64,
+
+    /// The amount of commits to go back when cloning a repo.
+    #[clap(short, long, default_value="5000")]
+    pub clone_depth: i64,
 
     /// Flag refering to if the server should start.
     #[clap(short='S', long, action)]

@@ -1,13 +1,19 @@
-use git2::{AutotagOption, Commit, Cred, Direction, RemoteCallbacks, RemoteUpdateFlags, Repository};
+use git2::{Commit, RemoteCallbacks, Repository, Progress};
 use std::{env, path::Path};
 use anyhow::{Context, Result};
 use log::debug;
 
+fn print_callback(v: Progress) -> bool {
+    debug!("Received Objects: #{:?}", v.received_objects());
+    true
+}
+
 /// Function for cloning a repo
 /// Returns error if it can't clone the repo.
-pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<Repository> {
+pub fn fetch_repo(ssh_url: &str, out_dir: &Path) -> Result<Repository> {
 
     // Gets the home directory
+    /*
     let home_env = match env::var("HOME") {
         Ok(v) => v,
         Err(_) => {
@@ -15,9 +21,11 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
             // return Err(git2::Error::new(ErrorCode::Directory, ErrorClass::Os, "Can't find environment variable `$HOME` for ssh!".to_string()))
         },
     };
+    */
 
     // Sets Credential callback
-    let callbacks = RemoteCallbacks::new();
+    let mut callbacks = RemoteCallbacks::new();
+    callbacks.transfer_progress(print_callback);
     /*
     callbacks.credentials(|_url, username_from_url, _allowed_types| {
         Cred::ssh_key(username_from_url.unwrap(),
@@ -27,17 +35,15 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
         )
     });
     */
-    debug!("Generated Credentials");
 
     // Prepares fetch options
     let mut fo = git2::FetchOptions::new();
     fo.remote_callbacks(callbacks);
-    debug!("Prepared fetch options");
+    fo.depth(5000); // Sets max depth to the repo clone
 
     // Prepare builder.
     let mut builder = git2::build::RepoBuilder::new();
     builder.fetch_options(fo);
-    debug!("Finished preparing builder");
 
     // Clones the repo
     if out_dir.is_dir() {
@@ -49,53 +55,6 @@ pub fn fetch_repo(ssh_url: &str, ssh_key_path: &str, out_dir: &Path) -> Result<R
             let oid = repo.refname_to_id(refname.unwrap().name().unwrap()).unwrap();
             let object = repo.find_object(oid, None).unwrap();
             repo.reset(&object, git2::ResetType::Hard, None).unwrap();
-        }
-        debug!("Updating Refs...");
-
-        let remotes = repo.remotes()?;
-        debug!("Found remotes: {:?}",
-            remotes.iter().map(|v| v.unwrap()).collect::<Vec<&str>>()
-        );
-
-        let branches = repo.branches(None)?
-            .map(|branch_res| {
-                let (branch, _branch_type) = branch_res.unwrap();
-                branch.name().unwrap().unwrap().to_string()
-            })
-            .collect::<Vec<String>>();
-        debug!("Found branches: {branches:?}");
-
-        for remote_str in remotes.iter() {
-            let mut remote = repo.find_remote(remote_str.unwrap()).unwrap();
-
-            let ref_specs_raw = remote.fetch_refspecs().unwrap();
-            let ref_specs = ref_specs_raw
-                .iter().map(|v| { v.unwrap() })
-                .collect::<Vec<&str>>()
-                ;
-
-            let _ = match remote.fetch(&ref_specs, None, None) {
-                Ok(_) => (),
-                Err(v) => {
-                    debug!(
-                        "Can't clone from remote: {:?} with refspecs: {:?}. Error: {v:?}",
-                        remote.name(),
-                        ref_specs
-                        );
-                },
-            };
-
-            let remote_list = remote
-                .list().unwrap()
-                .iter().map(|v| {
-                    v.name().to_string()
-                })
-                .collect::<Vec<String>>();
-
-            debug!("List: {:?}", remote_list);
-
-            debug!("Fetching Updates...");
-
         }
 
         return Ok(repo);

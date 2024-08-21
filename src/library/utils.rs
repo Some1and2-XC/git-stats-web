@@ -1,8 +1,10 @@
+use std::collections::BTreeSet;
+
 use regex::Regex;
 use url::Url;
 use log::debug;
 
-use git2::{Commit, DiffOptions, Repository};
+use git2::{Commit, DiffOptions, Oid, Repository};
 
 use crate::{
     aliases::AnnotatedCalendarValue,
@@ -40,7 +42,13 @@ pub fn get_path(src_url: &str) -> Url {
 }
 
 /// Function for getting all the commit data from a repository.
-fn recurs_search_trees(args: &CliArgs, repo: &Repository, commit: Commit, out_vec: &mut Vec<AnnotatedCalendarValue>, out_pred_struct: &mut PredictionStructure) -> () {
+fn recurs_search_trees(args: &CliArgs, repo: &Repository, commit: Commit, out_vec: &mut Vec<AnnotatedCalendarValue>, searched_commits: &mut BTreeSet<Oid>, out_pred_struct: &mut PredictionStructure) -> () {
+
+    // Tries to insert commit OID but if this isn't possible
+    // the just return. (see `BTreeSet::insert()` docs)
+    if !searched_commits.insert(commit.id()) {
+        return;
+    }
 
     let mut diff_opts = DiffOptions::new();
 
@@ -88,7 +96,7 @@ fn recurs_search_trees(args: &CliArgs, repo: &Repository, commit: Commit, out_ve
     }
 
     for parent in commit.parents() {
-        recurs_search_trees(args, repo, parent, out_vec, out_pred_struct);
+        recurs_search_trees(args, repo, parent, out_vec, searched_commits, out_pred_struct);
     }
 
 }
@@ -101,8 +109,10 @@ pub fn calculate_data(args: &CliArgs, repo: &Repository) -> Vec<CalendarValue> {
     let head = git::get_head_commit(repo);
     let mut prediction = PredictionStructure::new();
 
+    let mut searched_commits: BTreeSet<Oid> = BTreeSet::new();
+
     // Gets all the data
-    recurs_search_trees(args, repo, head, &mut commit_arr, &mut prediction);
+    recurs_search_trees(args, repo, head, &mut commit_arr, &mut searched_commits, &mut prediction);
 
     // Adds data the commit_arr
     // let max_commit_depth = 25;

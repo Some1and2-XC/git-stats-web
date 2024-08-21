@@ -81,7 +81,6 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
             let file_path = format!("{}{}", url.authority(), url.path()).to_lowercase();
             let repo = git::fetch_repo(
                 &src_url,
-                &args.ssh_key,
                 Path::new(&args.tmp.to_string()).join(&file_path).as_path(),
                 ).unwrap();
 
