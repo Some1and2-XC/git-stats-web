@@ -4,6 +4,8 @@ package-lock.json
 Cargo.lock
 tmp/
 
+*.secret
+
 .env
 
 sqlite.db
