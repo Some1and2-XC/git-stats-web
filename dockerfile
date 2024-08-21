@@ -1,5 +1,7 @@
 FROM rust:1.79
 
+EXPOSE 3000
+
 WORKDIR /usr/src/application
 COPY . .
 
