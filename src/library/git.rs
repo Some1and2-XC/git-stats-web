@@ -56,6 +56,44 @@ pub fn fetch_repo(ssh_url: &str, out_dir: &Path) -> Result<Repository> {
             let object = repo.find_object(oid, None).unwrap();
             repo.reset(&object, git2::ResetType::Hard, None).unwrap();
         }
+        debug!("Updating Refs...");
+
+        let remotes = repo.remotes()?;
+        debug!("Found remotes: {:?}",
+            remotes.iter().map(|v| v.unwrap()).collect::<Vec<&str>>()
+        );
+
+        let branches = repo.branches(None)?
+            .map(|branch_res| {
+                let (branch, _branch_type) = branch_res.unwrap();
+                branch.name().unwrap().unwrap().to_string()
+            })
+            .collect::<Vec<String>>();
+        debug!("Found branches: {branches:?}");
+
+        for remote_str in remotes.iter() {
+            let mut remote = repo.find_remote(remote_str.unwrap()).unwrap();
+
+            let ref_specs_raw = remote.fetch_refspecs().unwrap();
+            let ref_specs = ref_specs_raw
+                .iter().map(|v| { v.unwrap() })
+                .collect::<Vec<&str>>()
+                ;
+
+            let _ = match remote.fetch(&ref_specs, None, None) {
+                Ok(_) => (),
+                Err(v) => {
+                    debug!(
+                        "Can't clone from remote: {:?} with refspecs: {:?}. Error: {v:?}",
+                        remote.name(),
+                        ref_specs
+                        );
+                },
+            };
+
+            debug!("Fetching Updates...");
+
+        }
 
         return Ok(repo);
 
