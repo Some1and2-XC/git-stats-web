@@ -205,7 +205,7 @@ async fn main() -> std::io::Result<()> {
 
     let key = actix_web::cookie::Key::from(SESSION_SIGNING_KEY);
 
-    let ip = "127.0.0.1";
+    let ip = "0.0.0.0";
     let port = args.server_port;
 
     info!("Starting HTTP server at `{ip}:{port}`!");
@@ -213,8 +213,8 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let github_client = Data::new(GithubClient {
-        client_id: std::env::var("CLIENT_ID").unwrap().to_string(),
-        client_secret: std::env::var("CLIENT_SECRET").unwrap().to_string(),
+        client_id: std::env::var("CLIENT_ID").unwrap_or("".to_string()),
+        client_secret: std::env::var("CLIENT_SECRET").unwrap_or("".to_string()),
     });
 
     HttpServer::new(move || {

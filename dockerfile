@@ -8,6 +8,5 @@ COPY . .
 RUN rustup update
 
 RUN cargo build -j 1 --release
-RUN ln -s ./target/build/git-stats-web .
 
-CMD ["./git-stats-web"]
+CMD ["./target/release/git-stats-web"]
