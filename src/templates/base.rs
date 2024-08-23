@@ -12,6 +12,9 @@ impl WithBase for Markup {
             (DOCTYPE)
             html lang="en" data-scheme="dark" {
                 head {
+
+                    meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0" {}
+
                     title { "Git Stats" }
                     meta charset="utf-8" {}
                     link rel="icon" type="image/svg+xml" href="/static/icon.svg" {}
