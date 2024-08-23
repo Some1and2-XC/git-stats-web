@@ -88,7 +88,7 @@ pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
             width: 100%;
         "# {
             (icon())
-            div {
+            div style="flex: 3;" {
                 h1 {
                     a #calendar-source target="_blank" href=(full_url) {
                         (path)

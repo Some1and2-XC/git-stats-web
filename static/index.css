@@ -23,6 +23,12 @@
 
 }
 
+@media not print {
+    .print-only {
+        display: none;
+    }
+}
+
 :root[data-scheme=dark] .material {
     background-image: url("/static/media/images/material/thread_dark.png");
 }
@@ -82,6 +88,7 @@ article {
 
 body {
     margin: 0;
+    min-height: 100vh;
 }
 
 [type="checkbox"] {

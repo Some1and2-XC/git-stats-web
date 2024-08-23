@@ -35,6 +35,7 @@ async function updateCalendar(url) {
                 calendar.render();
 
                 bottom_text.innerText = "This report was automatically generated";
+                bottom_text.className += " print-only";
             });
     } catch (e) {
         bottom_text.innerText = `Failed to get Git Repo!`;
