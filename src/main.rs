@@ -1,3 +1,4 @@
+use git2::Repository;
 use templates::WithBase;
 use std::path::Path;
 use serde::Deserialize;
@@ -90,13 +91,30 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
             info!("Repo Cloned to `{file_path}`!");
             repo
         },
-        /*
         "file" => {
+            if !(&arc_args).allow_local {
+                return Err(errors::AppError {
+                    cause: Some(format!("`file://` schema is allowed but not configured! (must be enabled by CLI argument)")),
+                    message: Some(format!("`file://` schema is allowed but not configured! (must be enabled by CLI argument)")),
+                    error_type: StatusCode::BAD_REQUEST,
+                });
+            }
+
             let directory = ".".to_string() + url.path();
-            info!("Found repo in directory: `{directory}`!");
-            Repository::init(directory).unwrap()
+
+            match Repository::init(&directory) {
+                Ok(v) => {
+                    info!("Found repo in directory: `{directory}`!");
+                    v
+                }, Err(e) => {
+                    return Err(errors::AppError {
+                        cause: Some(format!("`file://` schema is configured but file not found! Error: {}", e)),
+                        message: Some(format!("`file://` schema is configured but file not found! Error: {}", e)),
+                        error_type: StatusCode::NOT_FOUND,
+                    })
+                },
+            }
         },
-        */
         scheme => {
             return Err(errors::AppError {
                 cause: Some(format!("Can't use scheme on URL: {} (source URL: {})", scheme, url)),
