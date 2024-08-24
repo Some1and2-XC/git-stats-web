@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, sync::Arc};
 
 use regex::Regex;
 use url::Url;
@@ -42,7 +42,7 @@ pub fn get_path(src_url: &str) -> Url {
 }
 
 /// Function for getting all the commit data from a repository.
-fn recurs_search_trees(args: &CliArgs, repo: &Repository, commit: Commit, out_vec: &mut Vec<AnnotatedCalendarValue>, searched_commits: &mut BTreeSet<Oid>, out_pred_struct: &mut PredictionStructure) -> () {
+fn recurs_search_trees(args: Arc<CliArgs>, repo: &Repository, commit: Commit, out_vec: &mut Vec<AnnotatedCalendarValue>, searched_commits: &mut BTreeSet<Oid>, out_pred_struct: &mut PredictionStructure) -> () {
 
     // Tries to insert commit OID but if this isn't possible
     // the just return. (see `BTreeSet::insert()` docs)
@@ -96,13 +96,13 @@ fn recurs_search_trees(args: &CliArgs, repo: &Repository, commit: Commit, out_ve
     }
 
     for parent in commit.parents() {
-        recurs_search_trees(args, repo, parent, out_vec, searched_commits, out_pred_struct);
+        recurs_search_trees(args.clone(), repo, parent, out_vec, searched_commits, out_pred_struct);
     }
 
 }
 
 /// Function for getting commit data and returning json
-pub fn calculate_data(args: &CliArgs, repo: &Repository) -> Vec<CalendarValue> {
+pub fn calculate_data(args: Arc<CliArgs>, repo: &Repository) -> Vec<CalendarValue> {
 
     let mut commit_arr: Vec<AnnotatedCalendarValue> = Vec::new();
 
@@ -112,14 +112,14 @@ pub fn calculate_data(args: &CliArgs, repo: &Repository) -> Vec<CalendarValue> {
     let mut searched_commits: BTreeSet<Oid> = BTreeSet::new();
 
     // Gets all the data
-    recurs_search_trees(args, repo, head, &mut commit_arr, &mut searched_commits, &mut prediction);
+    recurs_search_trees(args.clone(), repo, head, &mut commit_arr, &mut searched_commits, &mut prediction);
 
     // Adds data the commit_arr
     // let max_commit_depth = 25;
     // for _i in 0..max_commit_depth {
 
     let output_arr = commit_arr
-        .split_inclusive(|v| args.time_allowed <= v.0.delta_t)
+        .split_inclusive(|v| (&args).time_allowed <= v.0.delta_t)
         .collect::<Vec<&[AnnotatedCalendarValue]>>()
         .iter_mut()
         .map(|v| {

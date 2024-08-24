@@ -27,17 +27,13 @@ macro_rules! clap_enum_variants {
 #[command(version, about, long_about = None)]
 pub struct CliArgs {
 
-    /// The URL of the repo, if this is set, the repo will be fetched.
-    #[clap(short, long, default_value="file:")]
-    pub url: String,
+    /// A flag for allowing the `file://` schema for urls
+    #[clap(long, action, default_value="false")]
+    pub allow_local: bool,
 
     /// The path to the temp directory for the repos
     #[clap(long, default_value="./tmp")]
     pub tmp: String,
-
-    /// The file to write the output to
-    #[clap(short, long, default_value=None)]
-    pub outfile: Option<String>,
 
     /// The location of an ssh key for auth from the home directory.
     #[clap(short, long, default_value=".ssh/id_ed25519")]
@@ -48,19 +44,11 @@ pub struct CliArgs {
     pub time_allowed: i64,
 
     /// The amount of commits to go back when cloning a repo.
-    #[clap(short, long, default_value="5000")]
+    #[clap(short='d', long, default_value="5000")]
     pub clone_depth: i64,
 
-    /// Flag refering to if the server should start.
-    #[clap(short='S', long, action)]
-    pub server: bool,
-
-    /// The directory for the static server files.
-    #[clap(short='D', long, default_value="./static")]
-    pub server_directory: String,
-
     /// The port to run the server on.
-    #[clap(short='P', long, default_value="3000")]
+    #[clap(short='p', long, default_value="3000")]
     pub server_port: u16,
 
     /// Sets the verbosity of logs

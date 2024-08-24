@@ -75,13 +75,16 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
         },
     };
 
+    let arc_args = args.into_inner();
+
     // Fetches repo
     let repo = match url.scheme() {
         "http" | "https" | "ssh" => {
             let file_path = format!("{}{}", url.authority(), url.path()).to_lowercase();
             let repo = git::fetch_repo(
                 &src_url,
-                Path::new(&args.tmp.to_string()).join(&file_path).as_path(),
+                Path::new(&arc_args.tmp).join(&file_path).as_path(),
+                arc_args.clone(),
                 ).unwrap();
 
             info!("Repo Cloned to `{file_path}`!");
@@ -103,7 +106,7 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
         }
     };
 
-    return Ok(Json(utils::calculate_data(&*args, &repo)));
+    return Ok(Json(utils::calculate_data(arc_args, &repo)));
 }
 
 /*
@@ -152,28 +155,15 @@ pub struct GithubClient {
 async fn main() -> std::io::Result<()> {
 
     // Gets CLI arguments
-    let args = Data::new({
-        let mut args = cli::CliArgs::parse();
-        let terminator = ".git";
-        if args.url.ends_with(terminator) {
-            args.url = args.url[0..args.url.len() - terminator.len()]
-                .to_lowercase()
-                .to_string();
-        }
-        args
-    });
+    let args = Data::new(cli::CliArgs::parse());
 
     // Initializes the logger
-    if let Some(level) = args.log.to_level() {
+    if let Some(level) = &args.log.to_level() {
         std::env::set_var(LOG_ENV_VAR, level.to_string());
     }
 
     let env = env_logger::Env::new().filter(LOG_ENV_VAR);
     env_logger::init_from_env(env);
-
-    let src_url = &args.url;
-
-    let _url = utils::get_path(src_url);
 
     debug!("Initializing Database!");
 
@@ -206,7 +196,7 @@ async fn main() -> std::io::Result<()> {
     let key = actix_web::cookie::Key::from(SESSION_SIGNING_KEY);
 
     let ip = "0.0.0.0";
-    let port = args.server_port;
+    let port = (&args).server_port;
 
     info!("Starting HTTP server at `{ip}:{port}`!");
 

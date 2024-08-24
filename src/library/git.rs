@@ -1,7 +1,10 @@
+use actix_web::web::Data;
 use git2::{Commit, RemoteCallbacks, Repository, Progress};
-use std::{env, path::Path};
+use std::{env, path::Path, sync::Arc};
 use anyhow::{Context, Result};
 use log::debug;
+
+use super::cli::CliArgs;
 
 fn print_callback(v: Progress) -> bool {
     debug!("Received Objects: #{:?}", v.received_objects());
@@ -10,7 +13,7 @@ fn print_callback(v: Progress) -> bool {
 
 /// Function for cloning a repo
 /// Returns error if it can't clone the repo.
-pub fn fetch_repo(ssh_url: &str, out_dir: &Path) -> Result<Repository> {
+pub fn fetch_repo(ssh_url: &str, out_dir: &Path, args: Arc<CliArgs>) -> Result<Repository> {
 
     // Gets the home directory
     /*
@@ -39,7 +42,7 @@ pub fn fetch_repo(ssh_url: &str, out_dir: &Path) -> Result<Repository> {
     // Prepares fetch options
     let mut fo = git2::FetchOptions::new();
     fo.remote_callbacks(callbacks);
-    fo.depth(5000); // Sets max depth to the repo clone
+    fo.depth(args.clone_depth as i32); // Sets max depth to the repo clone
 
     // Prepare builder.
     let mut builder = git2::build::RepoBuilder::new();
