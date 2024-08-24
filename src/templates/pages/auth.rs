@@ -27,7 +27,7 @@ fn auth_card(title: &str, alt: Markup, url: &str, content: Markup, github_client
 
                 border: 1px solid var(--primary-color);
                 border-radius: 15px;
-                box-shadow: 1px 1px 25px -10px rgba(255, 255, 255, .5);
+                box-shadow: 3px 2px 10px -5px var(--primary-color);
 
                 background-color: rgba(0, 0, 0, 0.6);
 
