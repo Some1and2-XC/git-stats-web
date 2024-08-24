@@ -12,7 +12,7 @@ Have you ever needed to make a report of what you have been working on for any r
 When you make commits, generally the workflow is you write some code, then commit your changes. Because of this when you start working isn't actually tracked. Wouldn't it be nice if your fancy calendar generator could make some assumptions about when you started so that you get credit for all the work that you did? This program takes the total amount of lines added/removed and keeps track of the amount of time it takes on average for both of these metrics. This is so that every commit is counted.
 
 ### Support for local files
-If you work for the NSA and you don't want your state of the art kernel level 0 days on some public repo but also want to get reports, T-DY supports running on local files. By using the --allow-local option you can use `file://` url encoding and generate reports from your local file system (this is disabled on the web version.)
+If you work for the NSA and you don't want your state of the art kernel level 0days on some public repo but also want to get reports, T-DY supports running on local repos! By using the --allow-local option you can use `file://` url encoding and generate reports from your local file system (this is disabled on the web version.)
 
 ## In Development!
  - Adding more fine grained options for get requests like the ability to modify how long apart commits can happen while still being counted as one session.
