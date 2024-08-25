@@ -1,5 +1,5 @@
 use actix_web::web::Data;
-use git2::{Commit, RemoteCallbacks, Repository, Progress};
+use git2::{Commit, FetchOptions, Progress, RemoteCallbacks, Repository};
 use std::{env, path::Path, sync::Arc};
 use anyhow::{Context, Result};
 use log::debug;
@@ -68,9 +68,11 @@ pub fn fetch_repo(ssh_url: &str, out_dir: &Path, args: Arc<CliArgs>) -> Result<R
             // Makes repo not bare
             config.set_bool("core.bare", false)?;
 
-            // Sets remote rules
+            // Sets partial clone rules
+            /*
             config.set_str( "remote.origin.partialclonefilter", "blob:limit=1")?;
             config.set_bool("remote.origin.promisor", true)?;
+            */
 
             // Sets remotes
             let _remote = match repo.remote("origin", ssh_url) {
@@ -129,7 +131,12 @@ pub fn fetch_repo(ssh_url: &str, out_dir: &Path, args: Arc<CliArgs>) -> Result<R
             .collect::<Vec<&str>>()
             ;
 
-        let _ = match remote.fetch(&ref_specs, None, None) {
+        let mut fo = FetchOptions::new();
+        /*
+        fo.custom_headers(&[r#""filter" SP blob:limit=15"#]); // Doesn't work!
+        */
+
+        let _ = match remote.fetch(&ref_specs, Some(&mut fo), None) {
             Ok(_) => (),
             Err(v) => {
                 debug!(
