@@ -10,7 +10,7 @@ use url::Url;
 use sqlx::{migrate::MigrateDatabase, query, Sqlite, SqlitePool};
 
 use actix_web::{http::{header::ContentType, StatusCode}, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, Responder};
-use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
+use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 
 use dotenv::dotenv;

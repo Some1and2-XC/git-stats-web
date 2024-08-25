@@ -1,11 +1,11 @@
-use actix_web::web::Data;
 use git2::{Commit, FetchOptions, Progress, RemoteCallbacks, Repository};
-use std::{env, path::Path, sync::Arc};
+use std::{path::Path, sync::Arc};
 use anyhow::{Context, Result};
 use log::debug;
 
 use super::cli::CliArgs;
 
+/// The callback that just displays the object number.
 fn print_callback(v: Progress) -> bool {
     debug!("Received Objects: #{:?}", v.received_objects());
     true
