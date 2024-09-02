@@ -29,11 +29,15 @@ use git_stats_web::{
     calendar::CalendarValue,
 };
 
+/// The URL to the SQLite database.
 const DB_URL: &str = "sqlite://sqlite.db";
 
+/// The session signing key, defaults to an array of 0s. This sets how cookies get encrypted.
 const SESSION_SIGNING_KEY: &[u8] = &[0; 64];
+/// The environment variable for setting the rust logging level.
 const LOG_ENV_VAR: &str = "RUST_LOG";
 
+/// Method for handling 404 pages.
 async fn not_found(_req: HttpRequest) -> HttpResponse {
     let response = html! {
         h1 { "404 Not FOUND!" }

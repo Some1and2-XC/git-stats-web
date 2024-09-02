@@ -16,9 +16,9 @@ use super::super::{
 #[derive(Debug, Deserialize)]
 pub struct RepoUrl {
     pub url: String,
-    pub _date_end: Option<NaiveDate>,
-    pub _date_start: Option<NaiveDate>,
-    pub _time_allowed: Option<Timestamp>,
+    pub date_end: Option<NaiveDate>,
+    pub date_start: Option<NaiveDate>,
+    pub time_allowed: Option<Timestamp>,
 }
 
 // pub async fn calendar(path: web::Path<(String, String, String)>) -> Markup {
