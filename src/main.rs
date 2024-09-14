@@ -20,6 +20,8 @@ use maud::html;
 mod templates;
 mod auth;
 
+mod ws;
+
 use git_stats_web::{
     cli::{self, CliArgs},
     git,
@@ -273,6 +275,10 @@ async fn main() -> std::io::Result<()> {
 
             // Sets the repo list url
             .route("/repos", web::get().to(templates::repo_list::repo_list))
+
+            // Sets an echo route.
+            // WS is a feature for the future
+            // .route("/echo", web::get().to(ws::echo))
 
             // Sets api endpoints
             .service(
