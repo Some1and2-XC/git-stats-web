@@ -1,7 +1,7 @@
 use git2::{Commit, FetchOptions, Progress, RemoteCallbacks, Repository};
 use std::{path::Path, sync::Arc};
 use anyhow::{Context, Result};
-use log::debug;
+use log::{debug, warn};
 
 use super::cli::CliArgs;
 
@@ -158,9 +158,12 @@ pub fn fetch_repo(ssh_url: &str, out_dir: &Path, args: Arc<CliArgs>) -> Result<R
 /// Gets the head commit from a repo
 pub fn get_head_commit(repo: &Repository) -> Commit {
 
-    let head_oid = repo
-        .head()
-        .unwrap()
+    let head_oid = match repo.head() {
+        Ok(v) => v,
+        Err(e) => {
+            panic!("Error: `{}` (are you sure your remote is a valid git repo?", e.message());
+        },
+    }
         .target()
         .unwrap();
 
