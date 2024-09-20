@@ -23,7 +23,7 @@ pub async fn home(_session: Session) -> Markup {
             h1 { "Just want to try it out?" }
             p {
                 "If you're unsure of what to test this on, you can use "
-                a href="http://localhost:3000/repo?url=https%3A%2F%2Fgithub.com%2Fsome1and2-xc%2Fgit-stats-web%2F" {
+                a href="/repo?url=https%3A%2F%2Fgithub.com%2Fsome1and2-xc%2Fgit-stats-web%2F" {
                     "this link "
                 }
                 "to give this utility a try."
