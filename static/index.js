@@ -38,7 +38,7 @@ async function updateCalendar(url) {
                 bottom_text.className += " print-only";
             });
     } catch (e) {
-        bottom_text.innerText = `Failed to get Git Repo!`;
+        bottom_text.innerText = `Failed to get Git Repo! (Maybe try refreshing?)`;
 
         let error = document.createElement("b");
         error.innerText = `${e}`;
