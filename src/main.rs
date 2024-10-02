@@ -1,15 +1,15 @@
 use git2::Repository;
 use templates::WithBase;
-use std::path::Path;
+use std::{env, path::Path};
 use serde::Deserialize;
 use clap::Parser;
-use log::{debug, info};
+use log::{debug, info, warn};
 
 use url::Url;
 
 use sqlx::{migrate::MigrateDatabase, query, Sqlite, SqlitePool};
 
-use actix_web::{http::{header::ContentType, StatusCode}, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{http::{header::{ContentType, WARNING}, StatusCode}, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_files::Files;
 
@@ -90,7 +90,8 @@ async fn get_data(req: HttpRequest, args: Data<CliArgs>) -> Result<Json<Vec<Cale
             let file_path = format!("{}{}", url.authority(), url.path()).to_lowercase();
             let repo = git::fetch_repo(
                 &src_url,
-                Path::new(&arc_args.tmp).join(&file_path).as_path(),
+                Path::new(&arc_args.get_tmp_path())
+                    .join(&file_path).as_path(),
                 arc_args.clone(),
                 ).unwrap();
 
@@ -179,7 +180,7 @@ pub struct GithubClient {
 async fn main() -> std::io::Result<()> {
 
     // Gets CLI arguments
-    let args = Data::new(cli::CliArgs::parse());
+    let args = Data::new(cli::CliArgs::parse().set_project_location());
 
     // Initializes the logger
     if let Some(level) = &args.log.to_level() {
@@ -188,6 +189,25 @@ async fn main() -> std::io::Result<()> {
 
     let env = env_logger::Env::new().filter(LOG_ENV_VAR);
     env_logger::init_from_env(env);
+
+    // Shows warning if the exec_location is just the current directory
+    if args.get_project_location_as_ref() == &Path::new(".").to_path_buf() {
+        warn!("Can't find exe path, defaulting to run location for relative files! (this may include web pages and tmp files)");
+    } else {
+        info!("Found project location at: `{}`", args.get_project_location_as_ref().to_string_lossy());
+    }
+
+    info!("Found tmp directory at: `{}`", args.get_tmp_path());
+
+    // This is expecting the current executable to be in target/release/some_exe
+    let static_path = match &args.static_dir {
+        // Just returns the static_dir value if set
+        Some(v) => v.clone(),
+        // Joins the path to the executable location and casts to string
+        None => args.get_project_location_as_ref().join("static").to_str().unwrap().to_string(),
+    };
+
+    info!("Setting Web Directory to `{}`", static_path);
 
     debug!("Initializing Database!");
 
@@ -288,7 +308,7 @@ async fn main() -> std::io::Result<()> {
                 )
 
             // Sets the static server
-            .service(Files::new("/static", "static")
+            .service(Files::new("/static", static_path.as_str())
                 // .index_file("index.html")
                 // .show_files_listing() // Tree shows static files
                 // .prefer_utf8(true)
