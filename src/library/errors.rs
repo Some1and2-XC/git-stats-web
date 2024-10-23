@@ -1,6 +1,6 @@
 use core::fmt;
 
-use actix_web::{http::StatusCode, HttpResponse, ResponseError};
+use actix_web::{http::StatusCode, HttpResponse, Responder, ResponseError};
 use serde::{Deserialize, Serialize};
 
 /// AppErrors is the error handling struct for this library.
@@ -38,3 +38,4 @@ impl ResponseError for AppError {
         });
     }
 }
+

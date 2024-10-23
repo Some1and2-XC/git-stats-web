@@ -6,5 +6,6 @@ Cargo.lock
 
 .env
 
+*.db
 sqlite.db
 sqlite.db*

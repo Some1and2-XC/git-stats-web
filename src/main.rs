@@ -10,7 +10,7 @@ use url::Url;
 use sqlx::{migrate::MigrateDatabase, query, Sqlite, SqlitePool};
 
 use actix_web::{http::{header::{ContentType, WARNING}, StatusCode}, middleware, web::{self, Data, Json}, App, HttpRequest, HttpResponse, HttpServer, Responder};
-use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_files::Files;
 
 use dotenv::dotenv;
@@ -23,12 +23,7 @@ mod auth;
 mod ws;
 
 use git_stats_web::{
-    cli::{self, CliArgs},
-    git,
-    utils,
-    errors,
-    aliases::*,
-    calendar::CalendarValue,
+    aliases::*, calendar::CalendarValue, cli::{self, CliArgs}, database::User, errors, git, utils
 };
 
 /// The URL to the SQLite database.
@@ -141,16 +136,16 @@ async fn get_id(session: Session, db: DbPool) -> impl Responder {
         None => "Not Signed In!".to_string(),
     };
 }
+*/
 
 async fn get_info(session: Session, db: DbPool) -> impl Responder {
-    let user = match auth::User::from_session(&session, db).await {
+    let user = match User::from_session(&session, &**db).await {
         Some(v) => v,
         None => return "Not Logged In!".to_string(),
     };
 
     return format!("User: {:?}", user);
 }
-*/
 
 #[derive(Debug, Deserialize)]
 pub struct GithubRequest {
