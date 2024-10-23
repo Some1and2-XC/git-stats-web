@@ -3,9 +3,11 @@
 
 use actix_session::Session;
 use actix_web::{http, web::{self, Redirect}, Responder};
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use argon2::{password_hash::SaltString, Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use git2::Config;
 use git_stats_web::{database::User, errors::AppError};
 use log::{debug, warn};
+use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite};
 
@@ -74,6 +76,7 @@ impl SignupFormData {
 
     /// Tries to create a user from object.
     /// Returns error if passwords don't match.
+    /// Also hashes password to be stored in the user struct.
     pub fn to_user(self) -> Result<User, AppError> {
 
         if self.password != self.password2 {
@@ -86,7 +89,21 @@ impl SignupFormData {
 
         println!("Here is the value of remember: {:?}", &self.remember);
 
-        return Ok(User::new(self.email, self.username, self.password));
+        let hasher = Argon2::default();
+        let salt = SaltString::generate(&mut OsRng);
+
+        let password = match hasher.hash_password(self.password.as_bytes(), &salt) {
+            Ok(v) => v,
+            Err(_) => {
+                return Err(AppError {
+                    cause: Some("Can't hash password (for some reason..?)".into()),
+                    message: Some("Can't hash password (for some reason..?)".into()),
+                    error_type: http::StatusCode::INTERNAL_SERVER_ERROR, // kinda..
+                });
+            },
+        };
+
+        return Ok(User::new(self.email, self.username, password.to_string()));
 
     }
 
