@@ -29,14 +29,17 @@ pub enum UpdateResult<T, E> {
 
 impl<T, E> UpdateResult<T, E> {
 
+    /// Method for checking if the value is `Ok`
     pub const fn is_ok(&self) -> bool {
         return matches!(*self, Self::Ok(_));
     }
 
+    /// Method for checking if the value is `Err`
     pub const fn is_err(&self) -> bool {
         return matches!(*self, Self::Err(_));
     }
 
+    /// Method for casting the `Ok` value to the `Option::Some()`
     pub fn ok(self) -> Option<T> {
         return match self {
             Self::Ok(v) => Some(v),
@@ -44,6 +47,7 @@ impl<T, E> UpdateResult<T, E> {
         };
     }
 
+    /// Method for casting the `Err` value to the `Option::Some()`
     pub fn err(self) -> Option<E> {
         return match self {
             Self::Ok(_) => None,
@@ -51,6 +55,7 @@ impl<T, E> UpdateResult<T, E> {
         };
     }
 
+    /// Method for casting an option into `Self`
     pub fn from_option(ok: Option<T>, err: E) -> Self {
         return match ok {
             Some(v) => Self::Ok(v),
@@ -62,6 +67,7 @@ impl<T, E> UpdateResult<T, E> {
 
 impl<T> UpdateResult<T, T> {
 
+    /// Method for returning the inner value regardless if the value is `Ok` or `Err`
     pub fn indifferent(self) -> T {
         return match self {
             Self::Ok(v) => v,
