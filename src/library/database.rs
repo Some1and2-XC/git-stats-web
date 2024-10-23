@@ -9,6 +9,8 @@ use serde::Deserialize;
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use sqlx::{prelude::FromRow, Pool, Sqlite};
 
+use super::utils::UpdateResult;
+
 /// The session signing key for this application (this might have to be randomized)
 pub const SESSION_USER_ID_KEY: &str = "user_id";
 
@@ -77,7 +79,7 @@ impl User {
     }
 
     /// Method for updating the DB to reflect the current user struct based on email:w
-    pub async fn push_update(self, pool: &Pool<Sqlite>) -> Result<Self, Self> {
+    pub async fn push_update(self, pool: &Pool<Sqlite>) -> UpdateResult<Self, Self> {
 
         // If user does exist
         if User::does_email_exist(&self.email, pool).await {
@@ -100,7 +102,7 @@ impl User {
                 Ok(v) => v,
                 Err(e) => {
                     warn!("Something went wrong with the update query: `{:?}`", e);
-                    return Err(self);
+                    return UpdateResult::Err(self);
                 },
 
             };
@@ -108,7 +110,7 @@ impl User {
             match res.rows_affected() {
                 0 => {
                     debug!("No rows affected! Doesn't the email really exist?");
-                    return Err(self);
+                    return UpdateResult::Err(self);
                 },
                 1 => (),
                 _ => {
@@ -121,6 +123,7 @@ impl User {
             return User::from_email(&self.email, pool)
                 .await
                 .ok_or(self)
+                .into()
                 ;
 
         }
@@ -140,11 +143,15 @@ impl User {
                 Ok(v) => v,
                 Err(e) => {
                     warn!("Failed to add user: `{:?}` to database! Error: `{:?}`", &self.email, e);
-                    return Err(self)
+                    return UpdateResult::Err(self)
                 },
             };
 
-            return User::from_email(&self.email, pool).await.ok_or(self);
+            return User::from_email(&self.email, pool)
+                .await
+                .ok_or(self)
+                .into()
+                ;
 
         }
 
@@ -155,17 +162,17 @@ impl User {
     /// Returns self either way however
     /// On failure, returns the original instance of self.
     /// On success, reconstructs self from database data.
-    pub async fn pull_update_from_email(self, pool: &Pool<Sqlite>) -> Result<Self, Self> {
+    pub async fn pull_update_from_email(self, pool: &Pool<Sqlite>) -> UpdateResult<Self, Self> {
 
         let user: User = match sqlx::query_as("SELECT * FROM Users WHERE email = $1 LIMIT 1")
             .bind(&self.email)
             .fetch_one(pool)
             .await {
             Ok(v) => v,
-            Err(_) => return Err(self),
+            Err(_) => return UpdateResult::Err(self),
         };
 
-        return Ok(user);
+        return UpdateResult::Ok(user);
 
     }
 

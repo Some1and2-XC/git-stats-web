@@ -108,7 +108,7 @@ pub async fn signup_handler(session: Session, db: DbPool, info: web::Form<Signup
     user.to_session(&session);
 
     // Can't wait for the .either() method for Result<T, T>
-    user = match user.push_update(&**db).await {
+    user = match user.push_update(&**db).await.into() {
         Ok(v) => v,
         Err(v) => v,
     };
