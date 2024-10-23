@@ -150,6 +150,7 @@ fn recurs_search_trees(args: Arc<CliArgs>, repo: &Repository, commit: Commit, ou
     let commit_data: AnnotatedCalendarValue = (
         CalendarValue {
             title: commit.message().unwrap_or("MESSAGE_NOT_FOUND").trim().to_string(),
+            author: commit.author().to_string(),
             delta_t,
             start: prev_timestamp,
             end: timestamp,

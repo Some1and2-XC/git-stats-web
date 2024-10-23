@@ -15,5 +15,7 @@ pub struct CalendarValue {
     pub end: Timestamp,
     /// A flag, true if the value was projected, false if not.
     pub projected: bool,
+    /// The author of the commit
+    pub author: String,
 }
 

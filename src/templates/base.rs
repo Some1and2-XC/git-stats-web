@@ -26,9 +26,15 @@ impl WithBase for Markup {
                     script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous" {}
 
                     // NPM full calendar
+                    /*
                     script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.13/index.global.min.js" {}
+                    */
                     script src="/static/index.js" {}
                     script src="/static/theme.js" {}
+
+                    // ToastUI Calendar
+                    link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css" {}
+                    script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js" {}
 
                     // Marterialize Compiled and minified CSS
                     link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" {}

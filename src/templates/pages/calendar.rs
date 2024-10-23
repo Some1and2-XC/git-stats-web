@@ -95,7 +95,7 @@ pub async fn calendar(req: HttpRequest) -> Result<Markup, AppError> {
             }
         }
         hr {}
-        #calendar { }
+        #calendar style="height: 800px" { }
         code.bottom-message {
             "Loading..."
         }

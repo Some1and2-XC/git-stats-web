@@ -21,18 +21,22 @@ async function updateCalendar(url) {
                     init_date = events[events.length - 1]["end"]; // initializes to the newest date in the data
                 }
 
-                var calendarEl = document.getElementById("calendar");
-                var calendar = new FullCalendar.Calendar(calendarEl, {
-                    initialDate: init_date,
-                    initialView: "dayGridMonth",
-                    headerToolbar: {
-                        "left": "prev,next today",
-                        "center": "title",
-                        "right": "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+                var calendar = new tui.Calendar("#calendar", {
+
+                    defaultView: "month",
+                    template: {
+                        time(event) {
+                            const {start, end, title} = event;
+
+                            return `<span style="color: white;">${formatTime(start)}~${formatTime(end)} ${title}</span>`;
+                        },
+                        allday(event) {
+                            return `<span style="color: grey;">${event.title}</span>`;
+                        },
                     },
-                    events: events
+                    calendars: events,
                 });
-                calendar.render();
+                // calendar.render();
 
                 bottom_text.innerText = "This report was automatically generated";
                 bottom_text.className += " print-only";
