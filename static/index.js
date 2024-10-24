@@ -10,9 +10,12 @@ async function updateCalendar(url) {
 
                 let dates = ["start", "end"];
 
-                for (event in events) {
+                // Adds date to each event
+                for (ev in events) {
                     for (date in dates) {
-                        events[event][dates[date]] = new Date(events[event][dates[date]] * 1000);
+                        events[ev][dates[date]] = new Date(events[ev][dates[date]] * 1000);
+                        events[ev]["calendarId"] = 1;
+                        events[ev]["category"] = "commit";
                     }
                 }
 
@@ -37,6 +40,7 @@ async function updateCalendar(url) {
                     calendars: events,
                 });
                 // calendar.render();
+                calendar.createEvents(events);
 
                 bottom_text.innerText = "This report was automatically generated";
                 bottom_text.className += " print-only";
